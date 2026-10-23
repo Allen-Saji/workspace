@@ -1,12 +1,12 @@
-import { LOCAL_RELAY } from '../../../src/domain/contracts.ts';
-import { ingest } from '../../../src/domain/service.ts';
 import { boundedJson, failure, guard } from '../../../src/server/http.ts';
-import { openStore } from '../../../src/server/store.ts';
+import { requestRepository } from '../../../src/server/repository.ts';
 export const runtime = 'nodejs';
 export async function POST(request: Request) {
+  const headers = new Headers({ 'Cache-Control': 'private, no-store' });
   try {
-    guard(request,true); const payload = await boundedJson(request); const db = openStore();
-    try { return Response.json(ingest(db,LOCAL_RELAY,payload),{headers:{'Cache-Control':'no-store'}}); }
-    finally {db.close();}
-  } catch(error) {return failure(error);}
+    guard(request, true);
+    const db = await requestRepository(request, headers);
+    try { return Response.json(await db.ingest(await boundedJson(request)), { headers }); }
+    finally { db.close(); }
+  } catch (error) { return failure(error, headers); }
 }

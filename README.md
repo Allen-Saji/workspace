@@ -1,5 +1,9 @@
 # Allen's Personal Workspace — local development slice
 
+This feature branch adds an opt-in Supabase/auth adaptation. See
+[the phase architecture and rollout gates](docs/SUPABASE-PHASE.md).
+It is locally tested and not yet provisioned or deployed. SQLite remains the default.
+
 Status: working local vertical slice with responsive Today, Learning, Agents and Context views. Approved B/C references and four generated illustrations were inspected from the user-downloaded asset archive.
 
 ## Current implementation
@@ -10,7 +14,7 @@ Status: working local vertical slice with responsive Today, Learning, Agents and
 - Exact duplicate receipt recovery, changed replay rejection, revision conflicts, atomic rollback and fixed workspace/connection isolation.
 - Task/lesson/capture/note/manual meeting mutation services and synthetic registration states. No real pairing or operational credentials.
 - Owner acceptance, workspace save and remote acknowledgement remain independent. Local corrections retain source history and remain unsynced.
-- API is intended only for 127.0.0.1:3210 with strict Host/Origin and mutation header checks. It has no production authentication. The local OS user is the trust boundary; do not expose, tunnel or deploy it.
+- Default SQLite mode is loopback-only (normally 127.0.0.1:3210), with strict Host/Origin and mutation header checks. The local OS user is its trust boundary; do not expose or tunnel it. The opt-in hosted adapter adds verified Supabase sessions but still requires the rollout gates in the phase document before deployment.
 
 ## Commands (developer reference; assistant owns execution)
 
@@ -44,7 +48,7 @@ The CLI gets only fixed local relay scope from application code. This is an auth
 
 Today supports task create/edit/done, manual meetings with date validation, learning steps with self-reported progress/evidence, and notes. Agents shows explicit reports, durable receipts and a synthetic permission rehearsal. Context exposes sources, acceptance, local revisions and unsynced corrections separately from remote acknowledgement. Hash navigation supports browser Back. Dialogs support keyboard focus and Escape.
 
-Final checks passed: lint, typecheck, 13 unit tests and production build. Desktop (1440px) and mobile (390px) browser checks covered persistence after reload, form validation, cancellation, task editing/completion, learning evidence, duplicate and altered report replay, rejected registration, context correction and navigation. No browser console errors were observed.
+The original local slice passed lint, typecheck, 13 unit tests and production build. Desktop (1440px) and mobile (390px) browser checks covered persistence after reload, form validation, cancellation, task editing/completion, learning evidence, duplicate and altered report replay, rejected registration, context correction and navigation. No browser console errors were observed. The Supabase phase expands coverage to 28 tests, including embedded Postgres execution; see its verification limits in the phase document.
 
 The local review database contains conspicuously SAMPLE-labelled QA records plus one genuine parent-authored checkpoint. The checkpoint is historical; its original summary is preserved. No automatic live agent connection is claimed. Fresh installations start empty.
 

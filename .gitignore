@@ -6,7 +6,7 @@ artifacts/
 # Local-only runtime state, imported reports, and private delivery evidence
 checkpoints/
 /reports/
-receipts/
+/receipts/
 private/
 local-private/
 *.log
@@ -27,3 +27,6 @@ temp/
 MATERIALIZATION-RESULT.json
 VERIFICATION.md
 references/
+.vercel/
+supabase/.temp/
+supabase/.branches/
