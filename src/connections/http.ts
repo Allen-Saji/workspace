@@ -34,6 +34,7 @@ export async function handle(request: Request, path: string) {
     const authorization=request.headers.get('authorization')??'';
     if(!/^Bearer [A-Za-z0-9_-]{43}$/.test(authorization)) throw new DomainError('auth_required');
     const token=authorization.slice(7);
+    if(path==='rotate') { keys(object(input),[]); return Response.json(harness.rotate(token),{headers}); }
     if(path==='events') return Response.json(harness.ingest(token,input),{headers});
     if(path==='receipts') {
       const v=object(input); keys(v,['eventId']);

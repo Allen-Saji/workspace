@@ -16,9 +16,11 @@ sign-in and does not show personal records or fall back to SQLite.
 Actual multi-user Auth, PostgREST isolation, concurrent writes and recovery testing
 remain pending. Email confirmation is enabled. No test Auth accounts have been
 created. An administrative-key enumeration command was rejected by approval review;
-the publishable-only connector succeeded instead. Creating confirmed synthetic users
-through the official Auth admin API requires a separately approved temporary admin
-credential path. Do not disable email verification or manufacture Auth sessions.
+the publishable-only connector succeeded instead. A later proposed administrative
+credential retry was also rejected during parent handoff review. Do not enumerate or
+obtain administrative secrets by another route. Hosted testing currently permits only
+the publishable key and ordinary confirmed-user sessions; none are available yet.
+Do not disable email verification or manufacture Auth sessions.
 The applied remote migration was recorded by the connector; reconcile migration
 history before any future CLI migration push rather than reapplying this file blindly.
 

@@ -12,7 +12,7 @@ export default function Connections(){
   }
   return <section className="panel secondary-panel"><div className="panel-heading"><h2>Connect an agent</h2>{enabled?<button className="secondary" disabled={busy} onClick={()=>void act('pair')}>Create test pairing code</button>:null}</div>
     <p>The current assistant uses explicit owner-mediated report imports. That relay is separate from agent credentials.</p>
-    {!enabled?<p className="callout">Credential issuance is disabled. Connection authorization is implemented for isolated local testing; no external agent is connected through it.</p>:<>
+    {!enabled?<p className="callout">Credential issuance is disabled. Durable connection storage and rotation are implemented for local testing, but are not activated for this workspace. No external agent is connected through this setup.</p>:<>
       <p className="callout">Isolated test environment. Codes, tokens and test reports exist only until server restart. No access to your personal workspace.</p>
       {code?<div><label>One-use test pairing code<input readOnly value={code} autoComplete="off"/></label><p>Expires in 10 minutes. Do not paste into chat or logs.</p><button className="text-button" onClick={()=>setCode('')}>Hide code</button></div>:null}
       <button className="text-button" disabled={busy} onClick={()=>{setBusy(true);read().catch(()=>setError('Unable to refresh connections.')).finally(()=>setBusy(false));}}>Refresh requests</button>

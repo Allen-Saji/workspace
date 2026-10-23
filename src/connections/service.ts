@@ -20,19 +20,22 @@ function proof(value: unknown) {
 }
 function equal(a: string, b: string) { const x=Buffer.from(a), y=Buffer.from(b); return x.length===y.length && timingSafeEqual(x,y); }
 
-/** Isolated in-memory integration harness. No constructor accepts a file path.
- * All grants and reports disappear on process restart; production is not enabled.
- * Owner identity is a trusted server input, never an agent request parameter. */
-export class TestConnections {
-  private db = new DatabaseSync(':memory:');
-  private store = new SqliteStorage(this.db);
+/** Durable local adapter, not activated by the HTTP application. Owner identity
+ * is a trusted server input. All operations remain restricted to test reports
+ * until a production adapter and owner-session boundary are approved. */
+export class SqliteConnections {
+  private db: DatabaseSync;
+  private store: SqliteStorage;
   private now: () => number;
-  constructor(now: () => number = Date.now) {
+  constructor(path: string, now: () => number = Date.now) {
     this.now=now;
-    this.db.exec(`CREATE TABLE pairing(hash TEXT PRIMARY KEY,owner TEXT NOT NULL,workspace TEXT NOT NULL,expires INTEGER NOT NULL,request TEXT,digest TEXT,registration TEXT);
-      CREATE TABLE connections(id TEXT PRIMARY KEY,body TEXT NOT NULL);
-      CREATE TABLE tokens(hash TEXT PRIMARY KEY,connection TEXT NOT NULL);
-      CREATE TABLE limits(bucket TEXT PRIMARY KEY,window INTEGER NOT NULL,count INTEGER NOT NULL);`);
+    this.db=new DatabaseSync(path,{timeout:5000});
+    this.store=new SqliteStorage(this.db);
+    this.store.transaction(()=>this.db.exec(`CREATE TABLE IF NOT EXISTS pairing(hash TEXT PRIMARY KEY,owner TEXT NOT NULL,workspace TEXT NOT NULL,expires INTEGER NOT NULL,request TEXT,digest TEXT,registration TEXT);
+      CREATE TABLE IF NOT EXISTS connections(id TEXT PRIMARY KEY,body TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS tokens(hash TEXT PRIMARY KEY,connection TEXT NOT NULL UNIQUE REFERENCES connections(id));
+      CREATE TABLE IF NOT EXISTS limits(bucket TEXT PRIMARY KEY,window INTEGER NOT NULL,count INTEGER NOT NULL);
+      INSERT OR IGNORE INTO migrations VALUES(2);`));
   }
   close() { this.store.close(); }
   private limit(bucket: string, max = 30) {
@@ -133,6 +136,18 @@ export class TestConnections {
     if(!r.granted.includes(capability)) throw new DomainError('scope_denied');
     return r;
   }
+  rotate(token: string) {
+    this.limit('rotation',30);
+    return this.store.transaction(()=>{
+      const r=this.authenticated(token,'reports:append');
+      const replacement=secret();
+      // Same lock as authorization/ingestion/revocation. Never leave two live tokens.
+      this.db.prepare('DELETE FROM tokens WHERE connection=?').run(r.id);
+      this.db.prepare('INSERT INTO tokens VALUES(?,?)').run(hash(replacement),r.id);
+      r.tokenExpires=this.now()+3600000; this.put(r);
+      return {connectionId:r.id,accessToken:replacement,tokenType:'Bearer',expiresAt:new Date(r.tokenExpires).toISOString(),grantedScopes:r.granted,isTest:true};
+    });
+  }
   ingest(token: string, input: unknown) {
     this.limit('events',120);
     return this.store.transaction(()=>{
@@ -154,4 +169,9 @@ export class TestConnections {
       return this.store.findReport(r.workspace,r.id,idField(eventId))?.receipt??null;
     });
   }
+}
+
+/** Default HTTP harness always stays in memory; no file path or live grants. */
+export class TestConnections extends SqliteConnections {
+  constructor(now: () => number = Date.now) { super(':memory:',now); }
 }

@@ -22,6 +22,7 @@ test('embedded Postgres migration, RLS and atomic operation contract', async t =
       insert into auth.users values ('${alice}'),('${bob}');
       insert into auth.sessions values ('${alice}','${alice}'),('${bob}','${bob}'),('33333333-3333-4333-8333-333333333333','33333333-3333-4333-8333-333333333333');`);
     await db.exec(migration);
+    await db.exec(readFileSync(new URL('../supabase/migrations/20261023172249_connection_persistence_candidate.sql',import.meta.url),'utf8'));
     await db.query('insert into workspace_private.workspaces(owner_id) values($1),($2)',[alice,bob]);
     async function user(id:string, anonymous=false) {
       await db.exec('reset role');
@@ -38,6 +39,19 @@ test('embedded Postgres migration, RLS and atomic operation contract', async t =
       } catch(e) {return {data:null,error:{message:(e as Error).message}};}
     }});
     await user(alice);
+    await t.test('connection schema candidate hides token hashes and isolates owner metadata',async()=>{
+      await db.exec('reset role');
+      await db.query(`insert into workspace_private.agent_connections(workspace_id,display_name,requested_scopes,status,setup_challenge,setup_expires_at)
+        select id,'SAMPLE candidate',array['reports:append'],'pending',repeat('a',43),now()+interval '10 minutes' from workspace_private.workspaces where owner_id=$1`,[alice]);
+      await user(alice);
+      assert.equal((await db.query('select id,display_name from workspace_private.agent_connections')).rows.length,1);
+      await assert.rejects(db.query('select setup_challenge from workspace_private.agent_connections'),/permission denied/);
+      await assert.rejects(db.query('select * from workspace_private.agent_token_hashes'),/permission denied/);
+      await assert.rejects(db.query('select * from workspace_private.agent_pairings'),/permission denied/);
+      await assert.rejects(db.query("update workspace_private.agent_connections set status='approved'"),/permission denied/);
+      await user(bob);assert.equal((await db.query('select id from workspace_private.agent_connections')).rows.length,0);
+      await user(alice);
+    });
     await t.test('owner cannot write tables directly or impersonate another workspace',async()=>{
       await assert.rejects(db.query("insert into workspace_private.records values(gen_random_uuid(),'x','{}')"),/permission denied/);
       await assert.rejects(repository.mutate({id:'x',kind:'note',expectedRevision:0,data:{title:'a',content:'b'},workspaceId:bob}),/unknown_field/);
