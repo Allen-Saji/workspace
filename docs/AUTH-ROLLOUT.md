@@ -9,7 +9,7 @@ The SSR client uses PKCE. A confirmation link must return to exactly http://127.
 - Verify/add that exact local callback in this project's Auth redirect allowlist. This pass did not read secret-bearing management configuration or change remote Auth settings, so the current allowlist remains unverified.
 - Default Supabase SMTP restricts recipients to project-team email addresses and currently limits sends to 2/hour. No custom SMTP was configured. The user should use their existing project-team email; a second controlled identity may need a separately approved delivery arrangement.
 - User opens the local URL, selects Create an account, enters their own details and clicks Send confirmation email, then follows the email link in the same browser. No signup or email was submitted during development.
-- After confirmation, workspace ownership still needs explicit provisioning of this user's verified Auth ID. Existing owner_workspace fails closed for an unprovisioned account. This phase deliberately adds no automatic signup trigger, workspace membership or agent grant.
+- After confirmation, the self-only workspace initialization candidate must be reviewed/applied and deliberately enabled before first-login provisioning works. See SELF-ONBOARDING.md. It remains disabled/unapplied; existing owner_workspace still fails closed for an unprovisioned account. No membership or agent grant was issued.
 
 Actual Auth/PostgREST multi-user and multi-connection concurrency checks remain pending those sessions and workspace memberships. Embedded Postgres uses synthetic Auth claims and cannot establish a hosted pass. Do not obtain admin credentials or insert Auth users directly.
 
