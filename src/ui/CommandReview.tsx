@@ -4,12 +4,13 @@ import type { WorkspaceRecord } from '../domain/contracts';
 import type { Proposal,CommandReceipt,Operation } from '../domain/commands';
 import { deterministicInterpreter } from '../domain/interpreter';
 import { Modal } from './primitives';
-const key='workspace-local-command-draft-v1';
+
 type Draft={text:string;proposal:Proposal|null;receipt:CommandReceipt|null;attempted:boolean};
-function load():Draft{try{const s=sessionStorage.getItem(key);if(s)return JSON.parse(s);}catch{}return {text:'',proposal:null,receipt:null,attempted:false};}
-export default function CommandReview({records,onClose,onChanged}:{records:WorkspaceRecord[];onClose:()=>void;onChanged:()=>Promise<void>}){
-  const [draft,setDraft]=useState<Draft>(load),[error,setError]=useState(''),[busy,setBusy]=useState(false);
-  useEffect(()=>{try{sessionStorage.setItem(key,JSON.stringify(draft));}catch{/* Server receipts remain authoritative if browser storage is unavailable. */}},[draft]);
+function load(key:string):Draft{try{const s=sessionStorage.getItem(key);if(s)return JSON.parse(s);}catch{}return {text:'',proposal:null,receipt:null,attempted:false};}
+export default function CommandReview({workspaceId,records,onClose,onChanged}:{workspaceId:string;records:WorkspaceRecord[];onClose:()=>void;onChanged:()=>Promise<void>}){
+  const key='workspace-command-draft-v2-'+workspaceId;
+  const [draft,setDraft]=useState<Draft>(()=>load(key)),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+  useEffect(()=>{try{sessionStorage.setItem(key,JSON.stringify(draft));}catch{/* Server receipts remain authoritative if browser storage is unavailable. */}},[draft,key]);
   function edit(index:number,change:Partial<Operation>){setDraft(d=>({...d,proposal:{...d.proposal!,operations:d.proposal!.operations.map((op,i)=>i===index?{...op,...change}:op)}}));}
   function target(index:number,id:string){const op=draft.proposal!.operations[index],record=records.find(r=>r.id===id);
     if(!record){edit(index,{id:crypto.randomUUID(),expectedRevision:0});return;}
@@ -28,7 +29,7 @@ export default function CommandReview({records,onClose,onChanged}:{records:Works
   }
   const locked=busy||draft.attempted||!!draft.receipt;
   return <Modal title="Plan from text" onClose={()=>{if(!busy)onClose();}}><div className="editor">
-    <p className="callout">Limited command formats, not general AI. Type or use your own dictation tool, then review. No microphone or paid provider is connected. Local SQLite only.</p>
+    <p className="callout">Limited command formats, not general AI. Type or use your own dictation tool, then review. No microphone or paid provider is connected.</p>
     {!draft.proposal?<><label>Your draft<textarea value={draft.text} maxLength={12000} rows={5} onChange={e=>setDraft(d=>({...d,text:e.target.value}))}/></label>
       <p>One action per line:</p><pre style={{whiteSpace:'pre-wrap'}}>task: Buy milk{'\n'}note: Weekend | Visit the library{'\n'}meeting: Practice | 2026-10-25 09:00 | 2026-10-25 09:30</pre>
       <p>Meeting dates use 24-hour time in Asia/Kolkata (IST). Relative dates, ambiguous names and deletion commands are not interpreted.</p>

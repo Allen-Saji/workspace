@@ -49,6 +49,7 @@ export class SqliteStorage implements Storage {
     return this.db.prepare('SELECT body FROM history WHERE workspace=? AND id=? ORDER BY revision').all(workspace,id).map(r => JSON.parse(String(r.body)));
   }
   close() { this.db.close(); }
+  commands(workspace:string):CommandReceipt[]{return this.db.prepare("SELECT body FROM commands WHERE workspace=? ORDER BY json_extract(body,'$.committedAt') DESC,id LIMIT 100").all(workspace).map(r=>JSON.parse(String(r.body)));}
   command(workspace:string,id:string):CommandReceipt|null {
     const row=this.db.prepare('SELECT body FROM commands WHERE workspace=? AND id=?').get(workspace,id);
     return row?JSON.parse(String(row.body)):null;
