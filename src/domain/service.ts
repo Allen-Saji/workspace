@@ -43,13 +43,16 @@ export function receipt(storage: Storage, scope: Scope, eventId: string): Receip
 }
 // Called only by local owner UI/CLI. Reports cannot call this service or gain mutation capabilities.
 export function mutate(storage: Storage, input: unknown): WorkspaceRecord {
+  return storage.transaction(() => mutateInTransaction(storage,input));
+}
+// Internal primitive for owner-authorized all-or-nothing command groups.
+export function mutateInTransaction(storage: Storage, input: unknown): WorkspaceRecord {
   const command = object(input);
   keys(command,['id','kind','expectedRevision','data']);
   const id = idField(command.id);
   const kind = oneOf(command.kind,['task','lesson','capture','registration','note','meeting'] as const);
   const data = object(command.data);
   if (!Number.isSafeInteger(command.expectedRevision) || Number(command.expectedRevision) < 0) throw new DomainError('invalid_revision');
-  return storage.transaction(() => {
     const old = storage.get(WORKSPACE,id);
     if ((old?.revision ?? 0) !== command.expectedRevision) throw new DomainError('revision_conflict');
     if (old && old.kind !== kind) throw new DomainError('kind_conflict');
@@ -92,5 +95,4 @@ export function mutate(storage: Storage, input: unknown): WorkspaceRecord {
     }
     const record: WorkspaceRecord = {id,kind,revision:(old?.revision ?? 0)+1,updatedAt:new Date().toISOString(),data:{...old?.data,...next}};
     storage.put(WORKSPACE,record); storage.audit(WORKSPACE,record); return record;
-  });
 }

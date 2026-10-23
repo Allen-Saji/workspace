@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Receipt, WorkspaceRecord } from '../domain/contracts';
 import type { StoredReport } from '../storage/port';
+import CommandReview from './CommandReview';
 import Connections from './Connections';
 import Editor, {type EditTarget} from './Editor';
 import ReportImport from './ReportImport';
@@ -26,11 +27,12 @@ export default function Workspace() {
   const [snapshot,setSnapshot]=useState<Snapshot|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState('');
   const [editing,setEditing]=useState<EditTarget|null>(null),[importing,setImporting]=useState(false),[detail,setDetail]=useState<WorkspaceRecord|StoredReport|null>(null),[working,setWorking]=useState(false);
   const [query,setQuery]=useState('');
+  const [commandOpen,setCommandOpen]=useState(false);
   const refresh=useCallback(async()=>{try{const data=await responseJson(await fetch('/api/workspace',{cache:'no-store'}));setSnapshot(data);setError('');}catch(e){setSnapshot(null);setError(e instanceof Error?e.message:'Unable to refresh.');}},[]);
   useEffect(()=>{
     const controller=new AbortController();
     fetch('/api/workspace',{cache:'no-store',signal:controller.signal}).then(responseJson).then(data=>setSnapshot(data)).catch(e=>{if(!controller.signal.aborted)setError(e instanceof Error?e.message:'Unable to load workspace.');});
-    const change=()=>{setDetail(null);setEditing(null);setImporting(false);};
+    const change=()=>{setDetail(null);setEditing(null);setImporting(false);setCommandOpen(false);};
     window.addEventListener('hashchange',change);
     return()=>{controller.abort();window.removeEventListener('hashchange',change);};
   },[]);
@@ -49,6 +51,7 @@ export default function Workspace() {
   <main id="main"><div className="topbar"><span>{date||'Your workspace'}</span><div><span className="desktop-only">{!snapshot?'Storage not verified':snapshot.storageMode==='supabase'?'Saved in hosted workspace':'Saved on this computer'}</span><button className="text-button" onClick={()=>void refresh()}>Refresh</button>{snapshot?.storageMode==='supabase'?<button className="text-button" disabled={working} onClick={()=>void signout()}>Sign out</button>:null}</div></div>
   <header className="page-header"><div><p className="eyebrow">{view==='today'?'MAKE ROOM FOR WHAT MATTERS':'YOUR PERSONAL WORKSPACE'}</p><h1>{labels[view]}<span className="heading-underline"/></h1><p className="subtitle">{descriptions[view]}</p></div><div className="header-note"><span className="handwritten">one thing<br/>at a time</span><Illustration name="sparkle-cluster"/></div></header>
   {error?<div role="alert" className="error page-alert">{error} {error.startsWith('Sign in')?<a href="/login">Sign in</a>:null}<button className="text-button" onClick={()=>void refresh()}>Retry refresh</button></div>:null}<p role="status" className="save-notice">{notice}</p>
+  {view==='today'&&snapshot?.storageMode==='sqlite'?<section className="notes-strip"><div><h3>A few things on your mind?</h3><p>Turn a short draft into a proposal you can review.</p></div><button className="secondary" onClick={()=>setCommandOpen(true)}>Plan from text</button></section>:null}
   {!snapshot?<div className="panel loading">{error?'Workspace unavailable. Use the message above to continue.':'Opening your workspace.'}</div>:<>
   <div className={`dashboard ${view!=='today'?'focused':''}`}>
   {view==='today'?<section className="panel day-panel"><div className="panel-heading"><h2><Icon name="today"/>Your day</h2><Badge tone="yellow">{visibleTasks.some(t=>t.data.status!=='done')?`${visibleTasks.filter(t=>t.data.status!=='done').length} to do`:'Room to begin'}</Badge></div><div className="day-content">{dayMeetings.length?<div className="meetings">{dayMeetings.map(m=><button className="meeting-row" key={m.id} onClick={()=>setEditing({kind:'meeting',record:m})}><time>{new Date(s(m.data.start)).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'})}</time><span><strong>{s(m.data.title)}</strong><small>Manual meeting · {Math.round((Date.parse(s(m.data.end))-Date.parse(s(m.data.start)))/60000)} min</small></span></button>)}</div>:<div className="empty-day"><div><h3>A little room in your day.</h3><p>No meetings planned for today.<br/>Make space for something good.</p></div><Illustration name="calendar-checklist"/></div>}
@@ -64,6 +67,7 @@ export default function Workspace() {
   {view==='today'&&notes.length?<section className="notes-list"><h2>Your notes</h2>{notes.map(n=><button key={n.id} className="note-card" onClick={()=>setEditing({kind:'note',record:n})}><strong>{s(n.data.title)}</strong><p>{s(n.data.content)}</p><small>Saved here · {stamp(n.updatedAt)}</small></button>)}</section>:null}
   </>}
   <footer className="workspace-footer"><span>Made for a calmer kind of progress.</span><span>{!snapshot?'Storage connection not verified':snapshot.storageMode==='supabase'?'Hosted storage · refresh to see changes':'Local development · no cross-device sync'}<br/>Calendar & voice providers not connected</span></footer></main>
+  {commandOpen?<CommandReview records={records} onClose={()=>setCommandOpen(false)} onChanged={refresh}/>:null}
   {editing?<Editor target={editing} onClose={()=>setEditing(null)} onSave={save}/>:null}
   {importing?<ReportImport onClose={()=>setImporting(false)} onImport={importReport}/>:null}
   {detail?<Modal title={'report'in detail?'Checkpoint details':'Capture & source'} onClose={()=>setDetail(null)}>{'report'in detail?<div className="detail"><Badge tone="blue">{detail.report.isTest?'Sample / test':'Reported by current assistant'}</Badge><p className="detail-summary">{detail.report.summary}</p><dl><dt>Reported at</dt><dd>{stamp(detail.report.occurredAt)}</dd><dt>Workspace saved at</dt><dd>{stamp(detail.receipt.committedAt)}</dd><dt>Receipt</dt><dd>{detail.receipt.receiptId}</dd><dt>Event ID</dt><dd>{detail.report.eventId}</dd><dt>Source reference</dt><dd>{detail.report.source.conversationRef??'Not exposed by this connection'}</dd><dt>Remote acknowledgement</dt><dd>Not verified</dd><dt>Payload digest</dt><dd>{detail.receipt.payloadDigest}</dd></dl><p className="callout">This receipt proves the workspace saved this exact report. It does not prove remote memory storage or ongoing activity.</p></div>:<div className="detail"><p className="detail-summary">{s(detail.data.content)}</p><div className="badge-row"><Badge>{detail.data.userAccepted?'Accepted by you':'Not accepted by you'}</Badge><Badge tone="mint">Saved in workspace · revision {detail.revision}</Badge><Badge tone="yellow">Remote: not exposed</Badge></div><dl><dt>Basis</dt><dd>{s(detail.data.basis)}</dd><dt>Source event</dt><dd>{s(detail.data.eventId)}</dd><dt>Reported at</dt><dd>{stamp(detail.data.occurredAt)}</dd><dt>Updated here</dt><dd>{stamp(detail.updatedAt)}</dd><dt>Source reference</dt><dd>{s((detail.data.source as Record<string,unknown>)?.conversationRef)||'Not exposed by this connection'}</dd><dt>Disposition</dt><dd>{s(detail.data.disposition||detail.data.reportedDisposition)}</dd></dl>{detail.data.correctedLocally?<p className="callout">Corrected here; not synced to the assistant. The original report remains in report history.</p>:null}<button className="primary" onClick={()=>{setEditing({kind:'capture',record:detail});setDetail(null);}}>Correct or review capture</button></div>}</Modal>:null}
