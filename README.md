@@ -2,7 +2,9 @@
 
 This feature branch adds an opt-in Supabase/auth adaptation. See
 [the phase architecture and rollout gates](docs/SUPABASE-PHASE.md).
-It is locally tested and not yet provisioned or deployed. SQLite remains the default.
+It is locally tested; the approved dedicated Supabase schema is now applied, with
+authenticated hosted validation still pending. Nothing is deployed to Vercel.
+SQLite remains the code default; this feature worktree has ignored local hosted configuration.
 
 Status: working local vertical slice with responsive Today, Learning, Agents and Context views. Approved B/C references and four generated illustrations were inspected from the user-downloaded asset archive.
 

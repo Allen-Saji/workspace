@@ -1,8 +1,26 @@
 # Supabase adaptation — local review phase
 
-This branch implements code and a migration candidate. It has not provisioned,
-linked, migrated or deployed a remote project. The original main worktree and its
-SQLite database continue to serve the user's existing preview.
+This branch implements the Supabase adapter. Following explicit free-only approval,
+the parent created the dedicated Mumbai `workspace` project and this task applied
+the owner-isolation migration through the Supabase connector. Local configuration
+uses only its publishable key in ignored `.env.local`. No Vercel deployment or
+personal SQLite migration has occurred. The original main worktree is unchanged.
+
+## Hosted verification checkpoint
+
+The project is ACTIVE_HEALTHY. All four application tables have ENABLE/FORCE RLS;
+security and performance advisors returned no findings. Anonymous PostgREST snapshot
+calls return 401 / permission denied. The connected local browser correctly requests
+sign-in and does not show personal records or fall back to SQLite.
+
+Actual multi-user Auth, PostgREST isolation, concurrent writes and recovery testing
+remain pending. Email confirmation is enabled. No test Auth accounts have been
+created. An administrative-key enumeration command was rejected by approval review;
+the publishable-only connector succeeded instead. Creating confirmed synthetic users
+through the official Auth admin API requires a separately approved temporary admin
+credential path. Do not disable email verification or manufacture Auth sessions.
+The applied remote migration was recorded by the connector; reconcile migration
+history before any future CLI migration push rather than reapplying this file blindly.
 
 ## Bounded architecture
 
