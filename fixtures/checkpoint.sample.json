@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1",
+  "eventId": "sample-checkpoint-001",
+  "checkpointId": "sample-checkpoint-001",
+  "eventType": "checkpoint_reported",
+  "occurredAt": "2026-10-23T00:00:00Z",
+  "reportingMode": "explicit_checkpoint",
+  "isTest": true,
+  "summary": "SAMPLE: A learning outline was prepared. This is a fixture, not received live activity.",
+  "source": { "conversationRef": null, "segmentRef": null, "availability": "not_exposed" },
+  "entityRefs": [],
+  "captures": [{ "captureId": "sample-capture-001", "revision": 1, "type": "decision", "content": "SAMPLE: Practice TypeScript with a small exercise.", "basis": "explicit", "disposition": "proposed", "sensitivity": "ordinary", "remotePersistence": "not_exposed" }]
+}
