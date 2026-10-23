@@ -5,9 +5,9 @@ import type { WorkspaceRecord } from '../domain/contracts.ts';
 import type { Storage, StoredReport } from './port.ts';
 export class SqliteStorage implements Storage {
   private db: DatabaseSync;
-  constructor(path: string) {
-    if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
-    this.db = new DatabaseSync(path, { timeout: 5000 });
+  constructor(path: string | DatabaseSync) {
+    if (typeof path === 'string' && path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
+    this.db = typeof path === 'string' ? new DatabaseSync(path, { timeout: 5000 }) : path;
     this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;
       CREATE TABLE IF NOT EXISTS migrations (version INTEGER PRIMARY KEY);
       CREATE TABLE IF NOT EXISTS records (workspace TEXT NOT NULL,id TEXT NOT NULL,body TEXT NOT NULL,PRIMARY KEY(workspace,id));

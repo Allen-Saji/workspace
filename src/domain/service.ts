@@ -7,9 +7,14 @@ function authorize(scope: Scope, capability: string) {
 }
 export function ingest(storage: Storage, scope: Scope, input: unknown): Receipt {
   authorize(scope, 'reports:append');
+  return storage.transaction(() => ingestAuthorized(storage, scope, input));
+}
+// Internal transaction primitive. Caller must authenticate a connection and hold
+// the same transaction lock through authorization, writes and receipt commit.
+export function ingestAuthorized(storage: Storage, scope: Scope, input: unknown): Receipt {
+  if (!scope.capabilities.includes('reports:append')) throw new DomainError('scope_denied');
   const report = validateReport(input);
   const payloadDigest = createHash('sha256').update(JSON.stringify(report)).digest('hex');
-  return storage.transaction(() => {
     const prior = storage.findReport(scope.workspaceId, scope.connectionId, report.eventId);
     if (prior) {
       if (prior.receipt.payloadDigest !== payloadDigest) throw new DomainError('idempotency_conflict');
@@ -31,7 +36,6 @@ export function ingest(storage: Storage, scope: Scope, input: unknown): Receipt 
       status: 'saved', remotePersistence: 'not_verified' };
     storage.addReport(scope.workspaceId,{ connectionId: scope.connectionId, report, receipt });
     return receipt;
-  }); // Returns only after COMMIT. Any error rolls back both captures and receipt.
 }
 export function receipt(storage: Storage, scope: Scope, eventId: string): Receipt | null {
   authorize(scope, 'receipts:read');
