@@ -2,6 +2,7 @@ import { DomainError, keys, object, textField } from '../../../src/domain/contra
 import { runtimeConfig } from '../../../src/server/config.ts';
 import { boundedJson, failure, guard } from '../../../src/server/http.ts';
 import { requestClient, requireUser } from '../../../src/server/supabase.ts';
+import { requestSignup } from '../../../src/server/auth-flow.ts';
 export const runtime = 'nodejs';
 export async function POST(request: Request) {
   const headers = new Headers({ 'Cache-Control': 'private, no-store' });
@@ -18,9 +19,14 @@ export async function POST(request: Request) {
       if (error) throw new DomainError('auth_required');
     } else {
       keys(body, ['action','email','password']);
-      if (body.action !== 'signin') throw new DomainError('invalid_schema');
+      if (body.action !== 'signin' && body.action !== 'signup') throw new DomainError('invalid_schema');
       const email = textField(body.email, 254);
       const password = textField(body.password, 1024);
+      if(body.action==='signup'){
+        await requestSignup(client,email,password,config.origin);
+        // Generic response avoids revealing whether the address already exists.
+        return Response.json({ok:true,confirmationRequired:true},{headers});
+      }
       const { error } = await client.auth.signInWithPassword({ email, password });
       if (error) throw new DomainError('auth_required');
       await requireUser(client);
