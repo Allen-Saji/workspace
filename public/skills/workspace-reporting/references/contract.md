@@ -106,12 +106,12 @@ with or force an arbitrary agent to run. Loading the skill grants no external ac
 
 
 
-## Agent-initiated onboarding (candidate; not yet activated)
+## Agent-initiated onboarding
 
 The replacement flow is device-authorization style, inspired by RFC 8628 with
 PKCE-S256 proof binding. It is not a claim of general OAuth provider interoperability.
 Loading this skill does not authorize creation of a connection: obtain the user's
-instruction to connect this agent first. Until activation, /api/agent/device/* returns
+instruction to connect this agent first. If disabled, /api/agent/device/* returns
 503 setup_pending. Do not fall back to manual secret copying automatically.
 
 1. Locally generate a cryptographically random verifier (32 random bytes encoded

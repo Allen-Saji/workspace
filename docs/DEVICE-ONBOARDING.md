@@ -52,3 +52,30 @@ Desktop and 390x844 browser checks verified disabled setup, invalid link, and re
 layout. Approved/denied browser states were not exercised against hosted credentials.
 Embedded concurrent queued exchange calls produce exactly one credential; independent
 live PostgreSQL transaction contention remains untested. No live grant or migration.
+
+## Hosted activation and live QA — 2026-10-24
+
+The user approved this exact activation and one temporary Workspace QA connection.
+Both candidate and narrow activation migrations succeeded. App gate is now enabled.
+Verified anon wrapper access, no anon internal-body access, no anon table SELECT and
+no authenticated direct table UPDATE. Advisors reported nine intentional deny-by-default
+tables and the pre-existing leaked-password-protection warning; no policies were weakened.
+
+One real device request was approved through the existing owner browser session.
+Its scopes were exactly reports:append and receipts:read. The memory-only local client
+exchanged once, submitted a synthetic status and diary, recovered both receipts, and
+received duplicate receipts on identical replay. The diary revision advanced from 1 to 2.
+The UI rendered the synthetic status and revised diary. Cancel/reload before approval
+preserved pending state. No personal records were used by the client.
+
+The client exited at its stdin wait (unsettled top-level await), losing its ephemeral
+token before post-revocation transport probes. Therefore LIVE OLD-TOKEN DENIAL IS NOT
+CLAIMED. Owner UI revocation succeeded; independent SQL verified status revoked, zero
+token hashes and three retained journal events. No replacement token/request was created.
+The previous manual client and device client are both no longer running.
+
+78 tests, lint, typecheck and production build passed after app activation. Embedded
+revocation denial remains covered. Live multi-user isolation, independent concurrency,
+and old-token denial still require a separately approved future test. Future QA clients
+must keep a live event-loop handle while awaiting revocation, without persisting secrets.
+No OpenAI calls, paid changes, push or deployment.
