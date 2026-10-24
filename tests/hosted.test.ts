@@ -14,6 +14,8 @@ test('hosted configuration fails closed; no secret key or implicit SQLite on Ver
   assert.throws(()=>runtimeConfig({WORKSPACE_STORAGE:'unknown'}),/configuration_required/);
   const env={WORKSPACE_STORAGE:'supabase',WORKSPACE_ORIGIN:'https://workspace.example',SUPABASE_URL:'https://synthetic.supabase.co',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_synthetic'};
   assert.equal(runtimeConfig(env).mode,'supabase');
+  assert.equal(runtimeConfig({...env,VERCEL:'1'}).mode,'supabase');
+  assert.throws(()=>runtimeConfig({...env,VERCEL:'1',WORKSPACE_ORIGIN:'http://127.0.0.1:3212'}),/configuration_required/);
   for(const change of [{SUPABASE_PUBLISHABLE_KEY:'sb_secret_not_allowed'},{WORKSPACE_ORIGIN:'https://workspace.example/path'},{WORKSPACE_ORIGIN:'http://public.example'},{SUPABASE_URL:'http://synthetic.supabase.co'}]) assert.throws(()=>runtimeConfig({...env,...change}),/configuration_required/);
 });
 test('server authentication requires verified nonanonymous user, not metadata',async()=>{

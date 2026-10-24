@@ -2,6 +2,11 @@ import test from 'node:test';import assert from 'node:assert/strict';import {mkd
 import {TestBudget,TEST_POLICY,estimatedCeilingMicroUsd,budgetedTransport} from '../src/server/test-budget.ts';
 import {OPENAI_RESPONSES_URL,commandOutputSchema} from '../src/server/openai-interpretation.ts';
 const now=Date.parse('2026-10-24T00:00:00Z');
+test('Vercel cannot initialize or open the machine-local spending ledger',()=>{
+ const prior=process.env.VERCEL;process.env.VERCEL='1';
+ try{assert.throws(()=>new TestBudget('unused.sqlite'),/local_budget_unavailable_on_vercel/);assert.throws(()=>TestBudget.initialize('unused.sqlite',{approved:true,limitMicroUsd:1000000}),/local_budget_unavailable_on_vercel/);}
+ finally{if(prior===undefined)delete process.env.VERCEL;else process.env.VERCEL=prior;}
+});
 test('budget requires approval, persists charged attempts and never refunds unknown outcomes/retries',async()=>{
  const dir=mkdtempSync(join(tmpdir(),'workspace-budget-'));const path=join(dir,'budget.sqlite');try{
  assert.throws(()=>new TestBudget(path),/not_initialized/);TestBudget.initialize(path,{approved:false,limitMicroUsd:1000000});let b=new TestBudget(path);assert.throws(()=>b.reserve('a','a'.repeat(64),now),/not_approved/);b.close();

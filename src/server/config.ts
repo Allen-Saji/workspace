@@ -16,7 +16,7 @@ export function runtimeConfig(env: Record<string, string | undefined> = process.
     const origin = new URL(env.WORKSPACE_ORIGIN ?? '');
     const url = new URL(env.SUPABASE_URL ?? '');
     const key = env.SUPABASE_PUBLISHABLE_KEY ?? '';
-    if (origin.origin !== env.WORKSPACE_ORIGIN || origin.username || origin.password ||
+    if ((env.VERCEL && origin.protocol !== 'https:') || origin.origin !== env.WORKSPACE_ORIGIN || origin.username || origin.password ||
         !(origin.protocol === 'https:' || (origin.protocol === 'http:' && origin.hostname === '127.0.0.1')) ||
         url.protocol !== 'https:' || url.username || url.password || url.origin !== env.SUPABASE_URL ||
         !key.startsWith('sb_publishable_')) throw new Error('invalid');

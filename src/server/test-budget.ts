@@ -9,8 +9,9 @@ export const estimatedCeilingMicroUsd=Number((BigInt(TEST_POLICY.inputTokenCeili
 export class TestBudget {
  private db:DatabaseSync;
  // Must already exist: missing/deleted ledgers never silently reset an allowance.
- constructor(path:string){if(!existsSync(path))throw new Error('budget_not_initialized');this.db=new DatabaseSync(path);this.db.exec('PRAGMA busy_timeout=5000; PRAGMA synchronous=FULL;');}
+ constructor(path:string){if(process.env.VERCEL)throw new Error('local_budget_unavailable_on_vercel');if(!existsSync(path))throw new Error('budget_not_initialized');this.db=new DatabaseSync(path);this.db.exec('PRAGMA busy_timeout=5000; PRAGMA synchronous=FULL;');}
  static initialize(path:string,config:{approved:boolean;limitMicroUsd:number}){
+  if(process.env.VERCEL)throw new Error('local_budget_unavailable_on_vercel');
   if(existsSync(path))throw new Error('budget_already_exists');
   if(!Number.isSafeInteger(config.limitMicroUsd)||config.limitMicroUsd<0||config.limitMicroUsd>1000000)throw new Error('invalid_budget_limit');
   closeSync(openSync(path,'wx',0o600)); const db=new DatabaseSync(path);try{db.exec('PRAGMA synchronous=FULL; BEGIN IMMEDIATE; CREATE TABLE budget(singleton INTEGER PRIMARY KEY CHECK(singleton=1),approved INTEGER NOT NULL,limit_micro INTEGER NOT NULL,policy TEXT NOT NULL); CREATE TABLE reservations(request_id TEXT PRIMARY KEY,digest TEXT NOT NULL,reserved_micro INTEGER NOT NULL,state TEXT NOT NULL CHECK(state IN (\'reserved\',\'returned\',\'uncertain\')));');db.prepare('INSERT INTO budget VALUES(1,?,?,?)').run(config.approved?1:0,config.limitMicroUsd,TEST_POLICY.id);db.exec('COMMIT');}finally{db.close();}
