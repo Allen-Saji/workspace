@@ -10,7 +10,7 @@ import {hostedConnections} from '../src/connections/hosted.ts';
 const alice='11111111-1111-4111-8111-111111111111',bob='22222222-2222-4222-8222-222222222222';
 const hash=(s:string)=>createHash('sha256').update(s).digest('base64url');
 const fixture=JSON.parse(readFileSync(new URL('../fixtures/checkpoint.sample.json',import.meta.url),'utf8'));
-const migrations=['20261023132335_workspace_owner_isolation.sql','20261023172249_connection_persistence_candidate.sql','20261024082058_hosted_connection_transactions_candidate.sql','20261024084829_agent_diary_v2_candidate.sql'];
+const migrations=['20261023132335_workspace_owner_isolation.sql','20261023172249_connection_persistence_candidate.sql','20261024082058_hosted_connection_transactions_candidate.sql','20261024084829_agent_diary_v2_candidate.sql','20261024150645_device_authorization_candidate.sql'];
 test('hosted connection candidate: real embedded SQL, synthetic Auth only',async t=>{
  const dir=mkdtempSync(join(tmpdir(),'workspace-agent-pg-'));let db=new PGlite(dir,{extensions:{pgcrypto}});
  const invoke=async(name:string,args:Record<string,unknown>={})=>{const values=Object.values(args);const r=await db.query<{result:Record<string,unknown>}>(`select public.${name}(${values.map((_,i)=>'$'+(i+1)).join(',')}) result`,values.map(v=>v&&typeof v==='object'?JSON.stringify(v):v));return r.rows[0].result;};
@@ -48,6 +48,38 @@ test('hosted connection candidate: real embedded SQL, synthetic Auth only',async
    const outcomes=await Promise.allSettled([client.transport('exchange',null,{registrationId:r.id,codeVerifier:r.verifier}),client.transport('exchange',null,{registrationId:r.id,codeVerifier:r.verifier})]);assert.equal(outcomes.filter(x=>x.status==='fulfilled').length,1);
    const token=String((outcomes.find(x=>x.status==='fulfilled') as PromiseFulfilledResult<Record<string,unknown>>).value.accessToken);
    await assert.rejects(client.transport('events',token,fixture),/scope_denied/);await assert.rejects(client.transport('receipts',token,{eventId:'x'}),/scope_denied/);
+  });
+  await t.test('device flow binds an unowned request only on explicit owner decision, proof and one-use exchange',async()=>{
+   const rpc=(action:string,payload:Record<string,unknown>)=>invoke('workspace_device',{action,payload});
+   await agent();await assert.rejects(rpc('start',{}),/permission denied/);
+   await db.exec('reset role; grant execute on function workspace_private.device_rpc(text,jsonb),public.workspace_device(text,jsonb) to anon,authenticated;');
+   await agent();assert.equal((await rpc('start',{})).error,'connections_disabled');
+   await db.exec('reset role; update workspace_private.device_activation set enabled=true where singleton=true;');
+   const verifier=randomBytes(32).toString('base64url');
+   const payload={requestId:randomBytes(16).toString('hex'),displayName:'SYNTHETIC device',requestedScopes:['reports:append','receipts:read'],codeChallenge:hash(verifier),codeChallengeMethod:'S256'};
+   await agent();const start=await rpc('start',payload),id=start.requestId;
+   assert.equal((await rpc('start',payload)).requestId,id);
+   assert.equal((await rpc('start',{...payload,displayName:'changed'})).error,'idempotency_conflict');
+   assert.equal((await rpc('approve',{id,scopes:payload.requestedScopes})).error,'auth_required');
+   assert.equal((await rpc('poll',{id,codeVerifier:'x'.repeat(43)})).error,'auth_required');
+   assert.equal((await rpc('poll',{id,codeVerifier:verifier})).error,'authorization_pending');
+   assert.equal((await rpc('poll',{id,codeVerifier:verifier})).error,'slow_down');
+   await user(alice);assert.equal((await rpc('inspect',{id})).displayName,payload.displayName);
+   assert.equal((await rpc('approve',{id,scopes:['reports:append','captures:append']})).error,'scope_denied');
+   const decision=await rpc('approve',{id,scopes:payload.requestedScopes});assert.equal(decision.status,'approved');
+   await user(bob);assert.equal((await rpc('inspect',{id})).error,'scope_denied');
+   assert.equal((await rpc('approve',{id,scopes:payload.requestedScopes})).error,'scope_denied');
+   await db.exec('reset role');await db.query("update workspace_private.device_requests set next_poll=now()-interval '1 second' where id=$1",[id]);
+   await agent();const competing=await Promise.all([rpc('poll',{id,codeVerifier:verifier}),rpc('poll',{id,codeVerifier:verifier})]);assert.equal(competing.filter(x=>x.status==='active').length,1);const exchanged=competing.find(x=>x.status==='active')!;
+   assert.equal((await rpc('poll',{id,codeVerifier:verifier})).error,'already_exchanged');
+   await user(alice);await control('revoke',String(decision.connectionId));
+   await agent();await assert.rejects(client.transport('receipts',String(exchanged.accessToken),{eventId:'anything'}),/auth_required/);
+   const second=await rpc('start',{...payload,requestId:randomBytes(16).toString('hex')});
+   await user(alice);assert.equal((await rpc('deny',{id:second.requestId})).status,'denied');
+   await agent();assert.equal((await rpc('poll',{id:second.requestId,codeVerifier:verifier})).error,'access_denied');
+   const third=await rpc('start',{...payload,requestId:randomBytes(16).toString('hex')});
+   await db.exec('reset role');await db.query("update workspace_private.device_requests set expires_at=now()-interval '1 second' where id=$1",[third.requestId]);
+   await agent();assert.equal((await rpc('poll',{id:third.requestId,codeVerifier:verifier})).error,'expired_token');
   });
   let active:Awaited<ReturnType<typeof approved>>;let receipt:Record<string,unknown>;
   await t.test('scoped reports atomically persist; duplicate and altered-payload retry are distinguished',async()=>{
