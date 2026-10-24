@@ -1,3 +1,5 @@
+> Status update 2026-10-24: reviewed migrations and local app activation are now applied. See [HOSTED-ACTIVATION.md](HOSTED-ACTIVATION.md) for actual live checks and limits. Pending/unapplied statements below describe the original implementation checkpoint.
+
 # Hosted agent connections: implementation and activation boundary
 
 This code is implemented locally, not activated on Supabase. It adds no real agent

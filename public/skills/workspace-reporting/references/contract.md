@@ -1,7 +1,7 @@
 # Workspace reporting contract v2
 
 No credentials are embedded here. All paths are relative to the explicitly approved
-app origin. Hosted activation is pending; HTTP 503 connections_disabled means stop.
+app origin. Check deployment-specific activation; HTTP 503 connections_disabled means stop.
 Existing v1 report imports and receipts are unchanged. Do not send v2 to v1/events.
 
 ## Host configuration

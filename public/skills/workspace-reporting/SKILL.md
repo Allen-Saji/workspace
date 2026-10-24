@@ -7,7 +7,7 @@ description: Send approved project activity to a user's Workspace as one revisab
 
 Report only work the user has approved for this Workspace/project. This skill is
 portable to HTTP-capable agents; it does not install a scheduler, wake itself,
-obtain consent, or grant access. Current hosted v2 activation is pending. Check the
+obtain consent, or grant access. Availability depends on the app deployment and reviewed activation. Check the
 app capabilities and stop if disabled; do not bypass its gates or provision keys.
 
 Read [the v2 contract](references/contract.md) before onboarding or sending reports.

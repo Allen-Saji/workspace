@@ -1,3 +1,5 @@
+> Status update 2026-10-24: reviewed migrations and local app activation are now applied. See [HOSTED-ACTIVATION.md](HOSTED-ACTIVATION.md) for actual live checks and limits. Pending/unapplied statements below describe the original implementation checkpoint.
+
 # Agent diary/status v2 readiness
 
 Public skill: `/skills/workspace-reporting/SKILL.md`, with a portable HTTP contract in
