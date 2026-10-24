@@ -32,3 +32,7 @@ supabase/.temp/
 supabase/.branches/
 
 .next-qa/
+
+# Public reporting contract is distributable; private design references stay ignored.
+!public/skills/workspace-reporting/references/
+!public/skills/workspace-reporting/references/contract.md
