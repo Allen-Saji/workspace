@@ -5,7 +5,7 @@ import {requestClient,requireUser} from '../../../../../src/server/supabase.ts';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 // Activation requires a reviewed source change, not merely an environment flag.
-const DEVICE_AUTHORIZATION_REVIEWED:boolean=false;
+const DEVICE_AUTHORIZATION_REVIEWED:boolean=true;
 export async function POST(request:Request,context:{params:Promise<{path:string}>}){
  const headers=new Headers({'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer'});
  try{
@@ -26,4 +26,5 @@ export async function POST(request:Request,context:{params:Promise<{path:string}
   return Response.json(data,{headers,status:data.error?400:200});
  }catch(e){return failure(e,headers);}
 }
+
 
