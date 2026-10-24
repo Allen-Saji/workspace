@@ -38,3 +38,6 @@ Supabase Social OAuth is included in Free. This identity-only setup is intended 
 - https://developers.google.com/identity/protocols/oauth2/production-readiness/brand-verification
 - https://supabase.com/pricing
 - Current changelog reviewed: https://supabase.com/changelog.md ; upcoming legacy TLS CBC removal does not require changing this Node 24 OAuth flow.
+
+## Dedicated Google project checkpoint
+The approved Google Cloud project Workspace (allen-workspace-20261024) was created on 2026-10-24 without a billing step or billing association by this agent. Existing Everdesk was not reused. OAuth setup is partially prepared with app name Workspace, the authenticated owner's approved contact email, and External/testing audience. The final Google API Services: User Data Policy agreement remains unchecked pending specific user confirmation. Branding setup has not been submitted, no OAuth client or secret has been created, and Supabase Google remains disabled. Do not recreate the project; resume its preserved setup form after resolving the policy step. No scopes or production audience changes have been saved.
