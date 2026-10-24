@@ -6,8 +6,8 @@ import { requestClient, requireUser } from '../server/supabase.ts';
 import { hostedConnections } from './hosted.ts';
 import { SCOPES, TestConnections } from './service.ts';
 // Requires reviewed code activation plus separate database activation/grants.
-export const HOSTED_CONNECTIONS_REVIEWED: boolean = false;
-export const HOSTED_JOURNAL_REVIEWED: boolean = false;
+export const HOSTED_CONNECTIONS_REVIEWED: boolean = true;
+export const HOSTED_JOURNAL_REVIEWED: boolean = true;
 let harness: TestConnections | undefined;
 export function testHarness(){return harness??=new TestConnections();}
 export function enabled(env: Record<string,string|undefined> = process.env) {

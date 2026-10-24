@@ -33,10 +33,10 @@ test('hosted connection candidate: real embedded SQL, synthetic Auth only',async
   for(const m of migrations)await db.exec(readFileSync(new URL('../supabase/migrations/'+m,import.meta.url),'utf8'));
   await db.query('insert into workspace_private.workspaces(owner_id) values($1),($2)',[alice,bob]);
   await t.test('candidate exposes no execution; activation independently denies even with fixture grants',async()=>{
-   await user(alice);await assert.rejects(invoke('workspace_agent_control',{command:{action:'pair'}}),/permission denied/);
+   await user(alice);await assert.rejects(invoke('workspace_agent_control',{command:{action:'pair'}}),/permission denied/);await agent();await assert.rejects(invoke('workspace_agent_journal_transport',{action:'diary',credential:'invalid',payload:{}}),/permission denied/);
    await db.exec('reset role; grant usage on schema workspace_private to anon; grant execute on function workspace_private.agent_rpc(text,text,jsonb,boolean) to anon,authenticated; grant execute on function public.workspace_agent_control(jsonb) to authenticated; grant execute on function public.workspace_agent_transport(text,text,jsonb) to anon;');
    await user(alice);await assert.rejects(control('pair'),/connections_disabled/);
-   await db.exec('reset role; update workspace_private.agent_activation set enabled=true');
+   await db.exec('reset role');await db.exec(readFileSync(new URL('../supabase/migrations/20261024092137_activate_scoped_agent_reporting.sql',import.meta.url),'utf8'));
   });
   await t.test('atomic pairing replay, scope approval and one-time proof exchange',async()=>{
    const r=await register();const results=await Promise.all([client.transport('registrations',null,r.input),client.transport('registrations',null,r.input)]);assert.equal(results[0].id,r.id);assert.equal(results[1].id,r.id);
@@ -86,8 +86,6 @@ test('hosted connection candidate: real embedded SQL, synthetic Auth only',async
   await t.test('v2 diary daily uniqueness, revisions, backfill, status separation and owner isolation',async()=>{
    await db.exec('reset role; delete from workspace_private.agent_limits');
    const connection=await approved();
-   await assert.rejects(invoke('workspace_agent_journal_transport',{action:'diary',credential:connection.token,payload:{}}),/permission denied/);
-   await db.exec('reset role; grant execute on function workspace_private.agent_journal_rpc(text,text,jsonb),public.workspace_agent_journal_transport(text,text,jsonb) to anon; grant execute on function workspace_private.agent_journal_snapshot(),public.workspace_agent_journal() to authenticated');
    const report={schemaVersion:'2',kind:'diary',eventId:'diary-one',observedAt:'2026-01-01T19:00:00.000Z',sentAt:'2026-01-03T10:00:00.000Z',isTest:true,summary:'SYNTHETIC daily work',localDate:'2026-01-02',timezone:'Asia/Kolkata',expectedRevision:0,results:['SYNTHETIC result'],blockers:[],nextSteps:[],evidence:[]};
    const send=(action:string,payload:unknown)=>invoke('workspace_agent_journal_transport',{action,credential:connection.token,payload});
    await agent();const first=await send('diary',report);assert.equal(first.revision,1);assert.equal((await send('diary',report)).receiptId,first.receiptId);
