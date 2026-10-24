@@ -2,8 +2,8 @@ import {DomainError} from '../domain/contracts.ts';
 import {requireUser} from './supabase.ts';
 import type {UserVerifier} from './supabase.ts';
 import type {RpcClient} from '../storage/supabase-repository.ts';
-// Activation is deliberate and separate from deploying code. Candidate migration
-// remains unapplied; no current user receives a grant through this disabled path.
+// Activation is deliberate and separate from deploying code. The reviewed migration
+// was approved for local hosted rollout; default remains off in other environments.
 export async function initializeOwnWorkspace(client:UserVerifier & RpcClient,enabled=process.env.WORKSPACE_SELF_ONBOARDING==='enabled'){
  if(!enabled)return;
  await requireUser(client);
