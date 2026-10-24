@@ -3,6 +3,7 @@ import { useEffect,useState,useRef } from 'react';
 import type { WorkspaceRecord } from '../domain/contracts';
 import type { Proposal,CommandReceipt,Operation } from '../domain/commands';
 
+import {validateProposal} from '../domain/commands';
 import { Modal } from './primitives';
 
 type Draft={text:string;proposal:Proposal|null;receipt:CommandReceipt|null;attempted:boolean;requestId?:string;source?:string};
@@ -22,6 +23,16 @@ export default function CommandReview({workspaceId,records,onClose,onChanged}:{w
       setDraft(d=>({...d,proposal:result.proposal,source:result.source}));
     }catch{setError('Interpretation is unavailable. Your draft is preserved; retry when connected. No records were changed.');}
     finally{clearTimeout(timer);interpreting.current=false;setBusy(false);}
+  }
+  async function importProposal(file:File|undefined){
+    if(!file)return;
+    try{
+      if(file.size>32768)throw new Error('too_large');
+      const saved=JSON.parse(await file.text());
+      const proposal=validateProposal(saved.result?.proposal);
+      if(saved.result?.source!=='ai'||saved.applied!==false)throw new Error('invalid_saved_proposal');
+      setDraft(d=>({...d,proposal,source:'saved-ai',attempted:false,receipt:null}));setError('');
+    }catch{setError('Unable to review this saved proposal. Use an unapplied AI result export; nothing was changed.');}
   }
   function edit(index:number,change:Partial<Operation>){setDraft(d=>({...d,proposal:{...d.proposal!,operations:d.proposal!.operations.map((op,i)=>i===index?{...op,...change}:op)}}));}
   function target(index:number,id:string){const op=draft.proposal!.operations[index],record=records.find(r=>r.id===id);
@@ -43,10 +54,10 @@ export default function CommandReview({workspaceId,records,onClose,onChanged}:{w
   return <Modal title="Plan from text" onClose={()=>{if(!busy)onClose();}}><div className="editor">
     <p className="callout">Documented formats are available. Flexible AI is not connected: no model receives your draft. Type or use your own dictation tool, then review. No microphone or paid provider is connected.</p>
     {!draft.proposal?<><label>Your draft<textarea disabled={busy} value={draft.text} maxLength={12000} rows={5} onChange={e=>setDraft(d=>({...d,text:e.target.value}))}/></label>
-      <p>One action per line:</p><pre style={{whiteSpace:'pre-wrap'}}>task: Buy milk{'\n'}note: Weekend | Visit the library{'\n'}meeting: Practice | 2026-10-25 09:00 | 2026-10-25 09:30</pre>
+      <label>Review saved AI result (no model call)<input type='file' accept='.json,application/json' disabled={busy} onChange={e=>void importProposal(e.target.files?.[0])}/></label><p>Saved results are untrusted proposals: review every field before applying.</p><p>One action per line:</p><pre style={{whiteSpace:'pre-wrap'}}>task: Buy milk{'\n'}note: Weekend | Visit the library{'\n'}meeting: Practice | 2026-10-25 09:00 | 2026-10-25 09:30</pre>
       <p>Meeting dates use 24-hour time in Asia/Kolkata (IST). Relative dates, ambiguous names and deletion commands are not interpreted.</p>
       <button className="primary" disabled={busy} onClick={()=>void review()}>{busy?'Preparing proposal…':'Review proposal'}</button><button className="secondary" disabled title="OpenAI model, API cost and data-sharing configuration require review first.">Flexible AI — setup needed</button></>:<>
-      <p>Interpretation: {draft.source==='ai'?'AI proposal — verify every detail':'documented formats (not AI)'}. Nothing is applied until you choose Apply. Updates require selecting an exact existing record. Times below use explicit offsets; the displayed review is in IST.</p>
+      <p>Interpretation: {draft.source==='saved-ai'?'Saved AI proposal (replay; no new model call)':draft.source==='ai'?'AI proposal — verify every detail':'documented formats (not AI)'}. Nothing is applied until you choose Apply. Updates require selecting an exact existing record. Times below use explicit offsets; the displayed review is in IST.</p>
       {draft.proposal.operations.map((op,i)=><fieldset key={i} disabled={locked} style={{border:'1px solid #ddd',borderRadius:12,padding:16}}><legend>{i+1}. {op.kind}</legend>
         <label>Target {i+1}<select value={op.expectedRevision?op.id:''} onChange={e=>target(i,e.target.value)}><option value="">Create new {op.kind}</option>{records.filter(r=>r.kind===op.kind).map(r=><option key={r.id} value={r.id}>{String(r.data.title)} · revision {r.revision} · {r.id.slice(0,8)}</option>)}</select></label>
         {Object.entries(op.data).map(([name,value])=><label key={name}>{name} {i+1}<input value={String(value??'')} onChange={e=>edit(i,{data:{...op.data,[name]:e.target.value}})}/></label>)}
@@ -61,3 +72,5 @@ export default function CommandReview({workspaceId,records,onClose,onChanged}:{w
     <p className="muted">Draft is retained in this browser tab until cleared or the tab closes. Undo is available for seven days and refuses intervening edits. It does not undo external actions; none are performed here.</p>
   </div></Modal>;
 }
+
+

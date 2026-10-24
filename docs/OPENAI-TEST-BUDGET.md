@@ -37,3 +37,17 @@ or route wiring is enabled. Activation still requires secure configuration conse
 fee/pricing verification, a single protected ledger path, bounded synthetic-only test
 runner and reconciliation of provider usage. Never send personal workspace content.
 The app continues to expose AI as unavailable. Mock tests do not establish live quality.
+
+## Live synthetic result and browser review (2026-10-24)
+
+One authorized call returned HTTP 200: 316 input and 56 output tokens, 372 total.
+Standard input/output estimate: $0.0000596 before account-specific taxes/fees.
+The durable ledger retains one $0.50 reservation; no second attempt was made.
+The user confirmed existing credits and asked to stop billing inspection.
+
+The signed-in browser imported the actual saved response into validated editable review.
+Verified saved-AI replay labeling, title editing, back navigation, clearing/cancel and
+refresh with the original single QA task unchanged. No Apply action was invoked.
+This covers real model output plus UI replay, not a browser-triggered live provider request.
+Normal /api/interpret remains provider-free and AI unavailable.
+77 tests, lint, typecheck and production build passed. No key or runtime result is tracked.
