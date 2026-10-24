@@ -42,24 +42,39 @@ browser review tested unsupported deletion text, a synthetic editable create pro
 back/repeated review with the same command ID, and mobile 390x844 layout. The synthetic
 draft was cleared; Apply was never clicked. No personal records were changed.
 
-## Remaining free-inference decision
+## OpenAI selection and remaining activation decision
 
-Groq Free with openai/gpt-oss-20b is a candidate, not configured or selected for live use.
-Official [structured outputs](https://console.groq.com/docs/structured-outputs) document
-strict JSON schema support for this model. A future adapter should use required fields
-and additionalProperties:false, then retain this application's validation. Consult the
-[current free limits](https://console.groq.com/docs/rate-limits) for the actual account;
-limits are not an unlimited-service guarantee. HTTP 429 must return manual-entry advice,
-not a paid fallback or automatic retry loop.
+The user selected OpenAI; Groq is no longer the planned provider. Official documentation
+checked 2026-10-24 lists [gpt-6-luna](https://developers.openai.com/api/docs/models/gpt-6-luna)
+with Responses and Structured Outputs support. This is a verified public API ID, not an
+inference from Codex aliases. The phrase "GPT Luna" alone does not distinguish all Luna
+generations; no model is configured in the app. Account access has not been queried.
 
-Before activation: explicit approval to transmit only submitted command text to Groq;
-verify free plan/no billing or paid fallback; securely provision a server-only key;
-review and configure [data controls](https://console.groq.com/docs/your-data), including
-Zero Data Retention. Documentation allows reliability/abuse retention up to 30 days
-unless ZDR is enabled. No such configuration or credential action has happened.
-Implement per-user throttling, bounded network output/tokens, cancellation, no prompt
-logging and realistic synthetic evaluation before opening live AI. Current fake-provider
-unit fixtures do not establish model quality, privacy settings or account eligibility.
+Published standard text pricing is $0.10 input and $0.50 output per million tokens on
+the model page. API use is not established as free. The user's free-only constraint
+therefore remains unresolved: approve a specific API budget/cost exception or leave
+live inference off. No account credit, subscription entitlement or quota is assumed.
+
+`src/server/openai-interpretation.ts` prepares the Responses request contract without
+an SDK or dependency: configurable required model ID; strict text.format JSON schema;
+all fields required/additionalProperties:false; store:false; no tools, conversation
+history or previous response ID; 2,048 output-token cap; 64KiB streamed response bound.
+The existing interpreter supplies abort/deadline and validates translated actions.
+Refusal/incomplete output, invalid envelope, HTTP errors/429 and overlarge responses
+fail closed, with no retry or fallback. Mock transport tests are explicitly synthetic.
+There is NO default network transport, key/env lookup or route wiring. The factory is
+disabled by default; the actual application continues to report aiAvailable=false.
+
+Before enabling: confirm exact API model and account access, settle cost/budget and
+explicit command-text transmission approval, configure a server-only credential through
+a secure approved route, review current OpenAI data controls and retention (store:false
+is not a claim of zero retention), add per-user throttle/cost enforcement, then evaluate
+synthetic calls. Never transmit full workspace/history or log prompts/secrets. No key
+creation/configuration, credential retrieval, API call or billing change occurred here.
+
+Current API shape follows the official [Structured Outputs guide](https://developers.openai.com/api/docs/guides/structured-outputs).
+Local schema validation and explicit editable review remain required even when API
+constrained decoding succeeds. Account/model availability and live quality are untested.
 
 Deployment remains pending: approved publication/target, server-only environment setup,
 verified public origin/callbacks, real-user isolation and abuse limits. Existing agent
