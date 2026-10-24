@@ -51,8 +51,8 @@ inference from Codex aliases. The phrase "GPT Luna" alone does not distinguish a
 generations; no model is configured in the app. Account access has not been queried.
 
 Published standard text pricing is $0.10 input and $0.50 output per million tokens on
-the model page. API use is not established as free. The user's free-only constraint
-therefore remains unresolved: approve a specific API budget/cost exception or leave
+the model page. API use is not established as free. The user's original free-only constraint
+now has an approved US total synthetic test-round exception (see OPENAI-TEST-BUDGET.md); leave
 live inference off. No account credit, subscription entitlement or quota is assumed.
 
 `src/server/openai-interpretation.ts` prepares the Responses request contract without
