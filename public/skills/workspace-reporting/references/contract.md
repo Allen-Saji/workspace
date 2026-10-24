@@ -105,3 +105,37 @@ Sending this instruction is the user's/host's action. Workspace does not communi
 with or force an arbitrary agent to run. Loading the skill grants no external access.
 
 
+
+## Agent-initiated onboarding (candidate; not yet activated)
+
+The replacement flow is device-authorization style, inspired by RFC 8628 with
+PKCE-S256 proof binding. It is not a claim of general OAuth provider interoperability.
+Loading this skill does not authorize creation of a connection: obtain the user's
+instruction to connect this agent first. Until activation, /api/agent/device/* returns
+503 setup_pending. Do not fall back to manual secret copying automatically.
+
+1. Locally generate a cryptographically random verifier (32 random bytes encoded
+   base64url) and random requestId. Keep the verifier only in protected host memory
+   or the host's approved secret store. Never include it in a URL, chat or report.
+2. POST /api/agent/device/start with requestId, displayName, requestedScopes,
+   codeChallenge (base64url SHA256 of verifier), codeChallengeMethod "S256".
+   Only reports:append and optional receipts:read are allowed in this first version.
+   No owner/workspace identifier is accepted.
+3. Present the returned approvalUrl to the user. It contains only a public request
+   identifier. The user signs in and checks the self-reported identity and scopes.
+   Only approve a request they initiated; neither the name nor the link proves identity.
+4. POST /api/agent/device/poll with id (returned requestId) and codeVerifier. No browser
+   cookies. Wait at least the returned interval (initially 5 seconds). On slow_down,
+   use the increased interval for ALL subsequent polls; on network failure back off
+   exponentially. Stop at expiresAt, denial or terminal error. Do not start a new
+   request automatically to bypass denial, throttling or expiry.
+5. Approved exchange returns the credential once directly to the requesting process.
+   Never show it to the user/browser/chat. Save only through an approved host secret
+   store if persistent use was separately authorized. Lost exchange response cannot
+   recover the raw credential: ask the owner to revoke the connection before a new
+   authorized onboarding attempt. No automatic rotation or additional key issuance.
+
+Exact start retries require identical requestId and payload; altered replay fails.
+Pending requests expire after ten minutes. Tokens retain the existing one-hour
+lifetime and owner revocation semantics. Diary/status and receipts use the existing
+v2 contract. A scheduler remains a separate host capability and authorization.
