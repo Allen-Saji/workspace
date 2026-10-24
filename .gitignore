@@ -30,3 +30,5 @@ references/
 .vercel/
 supabase/.temp/
 supabase/.branches/
+
+.next-qa/

@@ -91,3 +91,9 @@ issued in this phase. Existing synthetic registration records remain as history 
 are no longer presented as operational connection controls.
 
 References: https://www.rfc-editor.org/rfc/rfc7636 and https://nodejs.org/api/crypto.html
+
+## Hosted candidate update
+The hosted transaction adapter, gated HTTP integration and owner-review UI now exist.
+See [HOSTED-CONNECTIONS.md](HOSTED-CONNECTIONS.md) for the current access model, test limits
+and exact activation checklist. The earlier remaining-work section above describes
+the local-adapter checkpoint; live activation is still disabled.
