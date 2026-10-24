@@ -1,3 +1,5 @@
+> Current login direction (2026-10-24): Google is primary; password signup UI is removed. See [GOOGLE-AUTH.md](GOOGLE-AUTH.md) for activation status and remaining setup. Earlier email-flow notes below are retained as implementation history.
+
 # Ordinary signup and confirmation
 
 The local hosted-mode preview is http://127.0.0.1:3212/login. User enters their own email/password; automation must not enter real passwords. Signup uses the existing publishable-key server client, preserves confirmation, and reports a generic check-inbox result without revealing whether an account exists. Passwords are never put in drafts, storage, URLs or logs by app code. Cancel swaps the form and clears its fields. Unknown network outcomes do not trigger automatic email retries.

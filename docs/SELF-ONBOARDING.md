@@ -1,3 +1,5 @@
+> Current login direction (2026-10-24): Google is primary; password signup UI is removed. See [GOOGLE-AUTH.md](GOOGLE-AUTH.md) for activation status and remaining setup. Earlier email-flow notes below are retained as implementation history.
+
 # Self-only first-login workspace setup
 
 Approved and applied on October 24, 2026 to workspace (wovswvjkioymuabthnmq) as self_workspace_initialization. Source: supabase/migrations/20261023175600_self_workspace_candidate.sql (historical candidate filename retained). Local ignored configuration now enables WORKSPACE_SELF_ONBOARDING; other environments remain disabled by default. No real Auth account or workspace row was created during activation.
