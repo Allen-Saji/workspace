@@ -1,3 +1,5 @@
+import {JournalStore} from '../journal/store.ts';
+import {validateJournal} from '../journal/contracts.ts';
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { DomainError, idField, keys, object, textField, validateReport } from '../domain/contracts.ts';
@@ -38,6 +40,17 @@ export class SqliteConnections {
       INSERT OR IGNORE INTO migrations VALUES(2);`));
   }
   close() { this.store.close(); }
+  journal(owner:string,workspace:string){
+    return this.store.transaction(()=>{const allowed=new Set(this.list(owner,workspace).map(c=>c.id));const snapshot=new JournalStore(this.db).snapshot(workspace);return {diaries:snapshot.diaries.filter(d=>allowed.has(d.connectionId)),statuses:snapshot.statuses.filter(s=>allowed.has(s.connectionId))};});
+  }
+  ingestJournal(token:string,input:unknown){
+    this.limit('journal',120);
+    return this.store.transaction(()=>{const r=this.authenticated(token,'reports:append');const report=validateJournal(input,this.now());if(!report.isTest)throw new DomainError('test_only');return new JournalStore(this.db).ingest(r.workspace,r.id,report,this.now());});
+  }
+  journalReceipt(token:string,eventId:string){
+    this.limit('journal-receipts',120);
+    return this.store.transaction(()=>{const r=this.authenticated(token,'receipts:read');return new JournalStore(this.db).receipt(r.workspace,r.id,eventId);});
+  }
   private limit(bucket: string, max = 30) {
     // Separate committed transaction: failed requests also consume rate budget.
     this.store.transaction(()=>{

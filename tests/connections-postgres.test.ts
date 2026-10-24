@@ -10,7 +10,7 @@ import {hostedConnections} from '../src/connections/hosted.ts';
 const alice='11111111-1111-4111-8111-111111111111',bob='22222222-2222-4222-8222-222222222222';
 const hash=(s:string)=>createHash('sha256').update(s).digest('base64url');
 const fixture=JSON.parse(readFileSync(new URL('../fixtures/checkpoint.sample.json',import.meta.url),'utf8'));
-const migrations=['20261023132335_workspace_owner_isolation.sql','20261023172249_connection_persistence_candidate.sql','20261024082058_hosted_connection_transactions_candidate.sql'];
+const migrations=['20261023132335_workspace_owner_isolation.sql','20261023172249_connection_persistence_candidate.sql','20261024082058_hosted_connection_transactions_candidate.sql','20261024084829_agent_diary_v2_candidate.sql'];
 test('hosted connection candidate: real embedded SQL, synthetic Auth only',async t=>{
  const dir=mkdtempSync(join(tmpdir(),'workspace-agent-pg-'));let db=new PGlite(dir,{extensions:{pgcrypto}});
  const invoke=async(name:string,args:Record<string,unknown>={})=>{const values=Object.values(args);const r=await db.query<{result:Record<string,unknown>}>(`select public.${name}(${values.map((_,i)=>'$'+(i+1)).join(',')}) result`,values.map(v=>v&&typeof v==='object'?JSON.stringify(v):v));return r.rows[0].result;};
@@ -83,6 +83,25 @@ test('hosted connection candidate: real embedded SQL, synthetic Auth only',async
    await db.exec('reset role');await db.query('update auth.users set email_confirmed_at=null where id=$1',[bob]);await user(bob);await assert.rejects(control('pair'),/auth_required/);
    await agent();assert.equal((await invoke('workspace_agent_transport',{action:null,credential:null,payload:{}})).error,'scope_denied');
   });
+  await t.test('v2 diary daily uniqueness, revisions, backfill, status separation and owner isolation',async()=>{
+   await db.exec('reset role; delete from workspace_private.agent_limits');
+   const connection=await approved();
+   await assert.rejects(invoke('workspace_agent_journal_transport',{action:'diary',credential:connection.token,payload:{}}),/permission denied/);
+   await db.exec('reset role; grant execute on function workspace_private.agent_journal_rpc(text,text,jsonb),public.workspace_agent_journal_transport(text,text,jsonb) to anon; grant execute on function workspace_private.agent_journal_snapshot(),public.workspace_agent_journal() to authenticated');
+   const report={schemaVersion:'2',kind:'diary',eventId:'diary-one',observedAt:'2026-01-01T19:00:00.000Z',sentAt:'2026-01-03T10:00:00.000Z',isTest:true,summary:'SYNTHETIC daily work',localDate:'2026-01-02',timezone:'Asia/Kolkata',expectedRevision:0,results:['SYNTHETIC result'],blockers:[],nextSteps:[],evidence:[]};
+   const send=(action:string,payload:unknown)=>invoke('workspace_agent_journal_transport',{action,credential:connection.token,payload});
+   await agent();const first=await send('diary',report);assert.equal(first.revision,1);assert.equal((await send('diary',report)).receiptId,first.receiptId);
+   assert.equal((await send('diary',{...report,summary:'changed'})).error,'idempotency_conflict');assert.equal((await send('diary',{...report,eventId:'stale'})).error,'revision_conflict');
+   assert.equal((await send('diary',{...report,eventId:'edit',expectedRevision:1})).revision,2);
+   assert.equal((await send('diary',{...report,eventId:'zone',expectedRevision:2,timezone:'Asia/Colombo'})).error,'timezone_conflict');
+   assert.equal((await send('diary',{...report,eventId:'date',localDate:'2026-01-01'})).error,'invalid_local_date');
+   assert.equal((await send('diary',{...report,eventId:'backfill',localDate:'2026-01-01',observedAt:'2025-12-31T19:00:00.000Z'})).revision,1);
+   const status={schemaVersion:'2',kind:'status',eventId:'status-new',observedAt:'2026-01-03T12:00:00.000Z',sentAt:'2026-01-03T13:00:00.000Z',isTest:true,summary:'SYNTHETIC working',state:'working',evidence:[]};
+   assert.equal((await send('status',status)).status,'saved');assert.equal((await send('status',{...status,eventId:'status-old',observedAt:'2026-01-03T10:00:00.000Z',state:'offline'})).status,'saved');
+   await user(alice);const journal=await invoke('workspace_agent_journal');assert.equal((journal.diaries as unknown[]).length,2);assert.equal((journal.statuses as {report:{state:string}}[])[0].report.state,'working');
+   await user(bob);assert.deepEqual(await invoke('workspace_agent_journal'),{diaries:[],statuses:[]});
+   await user(alice);await control('revoke',connection.id);await agent();assert.equal((await send('diary',report)).error,'auth_required');
+  });
   await t.test('rejection, expiration, session deletion and failed-attempt budgets fail closed',async()=>{
    const r=await register();await user(alice);await control('reject',r.id);await assert.rejects(control('approve',r.id,['reports:append']),/registration_closed/);await agent();await assert.rejects(client.transport('exchange',null,{registrationId:r.id,codeVerifier:r.verifier}),/registration_closed/);
    const exp=await approved();await db.exec('reset role');await db.query("update workspace_private.agent_connections set token_expires_at=now()-interval '1 second' where id=$1",[exp.id]);await agent();await assert.rejects(client.transport('events',exp.token,fixture),/auth_required/);
@@ -91,4 +110,3 @@ test('hosted connection candidate: real embedded SQL, synthetic Auth only',async
   });
  }finally{await db.close();rmSync(dir,{recursive:true,force:true});}
 });
-

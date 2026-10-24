@@ -7,7 +7,9 @@ import { hostedConnections } from './hosted.ts';
 import { SCOPES, TestConnections } from './service.ts';
 // Requires reviewed code activation plus separate database activation/grants.
 export const HOSTED_CONNECTIONS_REVIEWED: boolean = false;
+export const HOSTED_JOURNAL_REVIEWED: boolean = false;
 let harness: TestConnections | undefined;
+export function testHarness(){return harness??=new TestConnections();}
 export function enabled(env: Record<string,string|undefined> = process.env) {
   return env.WORKSPACE_CONNECTIONS === 'ephemeral-test' && !env.VERCEL && runtimeConfig(env).mode === 'sqlite';
 }
@@ -21,9 +23,9 @@ export async function handle(request: Request, path: string) {
     guard(request);
     if(new URL(request.url).search) throw new DomainError('invalid_schema');
     const local=enabled(), hosted=hostedEnabled(), active=local||hosted;
-    if(path==='capabilities' && request.method==='GET') return Response.json({enabled:active,testOnly:!hosted,mode:hosted?'hosted':local?'ephemeral-test':'disabled',protocol:'workspace-scoped-reports-1',scopes:SCOPES,credentialExchange:'PKCE-S256',productionReady:false},{headers});
+    if(path==='capabilities' && request.method==='GET') return Response.json({enabled:active,testOnly:!hosted,mode:hosted?'hosted':local?'ephemeral-test':'disabled',protocol:'workspace-scoped-reports-1',reportVersions:['1','2'],journalEnabled:local||(hosted&&HOSTED_JOURNAL_REVIEWED),schedulerConnected:false,scopes:SCOPES,credentialExchange:'PKCE-S256',productionReady:false},{headers});
     if(!active) throw new DomainError('connections_disabled');
-    if(local)harness ??= new TestConnections();
+    if(local)testHarness();
     if(path==='control') {
       if(request.method!=='GET' && request.method!=='POST')throw new DomainError('scope_denied');
       if(request.method==='POST')guard(request,true);
