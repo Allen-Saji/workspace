@@ -11,7 +11,7 @@ export function openAIProvider(config:{model:string;enabled?:boolean},transport:
  if(config.enabled!==true)throw new Error('openai_disabled');
  if(!/^[a-z0-9][a-z0-9._-]{0,99}$/.test(config.model))throw new Error('model_id_required');
  return {async interpret(input,signal){
-  const response=await transport(OPENAI_RESPONSES_URL,{model:config.model,store:false,stream:false,max_output_tokens:2048,
+  const response=await transport(OPENAI_RESPONSES_URL,{model:config.model,service_tier:'default',store:false,stream:false,max_output_tokens:2048,
    instructions:input.instructions+' OpenAI schema envelope: clarification is null with one or more actions, or a clarification string with actions empty.',
    input:[{role:'user',content:[{type:'input_text',text:input.text}]}],
    text:{format:{type:'json_schema',name:'workspace_proposal',strict:true,schema:commandOutputSchema}}},signal);
