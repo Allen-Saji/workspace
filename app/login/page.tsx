@@ -1,6 +1,8 @@
+import type { Metadata } from 'next';
 import { runtimeConfig } from '../../src/server/config.ts';
 import { googleAvailable } from '../../src/server/google-auth.ts';
 import GoogleLogin from './google-login';
+export const metadata:Metadata={title:'Sign in',robots:{index:false,follow:false,nocache:true}};
 export const dynamic = 'force-dynamic';
 export default async function Login({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const query = await searchParams;
