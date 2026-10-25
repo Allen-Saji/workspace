@@ -2,11 +2,16 @@ import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@s
 import { DomainError } from '../domain/contracts.ts';
 import type { RuntimeConfig } from './config.ts';
 
+// Reuse one cookie jar when several services authenticate the same request.
+const requestClients = new WeakMap<Request, WeakMap<Headers, ReturnType<typeof createServerClient>>>();
+
 export function requestClient(request: Request, config: Extract<RuntimeConfig, { mode: 'supabase' }>, headers: Headers) {
+  const existing = requestClients.get(request)?.get(headers);
+  if (existing) return existing;
   const jar = new Map(parseCookieHeader(request.headers.get('cookie') ?? '').map(c => [c.name, c.value ?? '']));
   // Only page proxy and route handlers verify sessions. No Server Component
   // reads them; the page proxy excludes APIs to avoid duplicate refreshes.
-  return createServerClient(config.url, config.publishableKey, {
+  const client = createServerClient(config.url, config.publishableKey, {
     cookieOptions: { httpOnly: true, sameSite: 'lax', secure: config.origin.startsWith('https://'), path: '/' },
     cookies: {
       getAll: () => [...jar].map(([name, value]) => ({ name, value })),
@@ -19,6 +24,10 @@ export function requestClient(request: Request, config: Extract<RuntimeConfig, {
       },
     },
   });
+  const clients = requestClients.get(request) ?? new WeakMap();
+  clients.set(headers, client);
+  requestClients.set(request, clients);
+  return client;
 }
 export interface UserVerifier {
   auth: { getUser(): Promise<{ data: { user: { id: string; is_anonymous?: boolean } | null }; error: unknown }> };
