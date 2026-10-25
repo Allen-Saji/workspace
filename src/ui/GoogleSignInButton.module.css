@@ -1,0 +1,65 @@
+.control {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  max-width: 100%;
+  width: 230px;
+  gap: 10px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 50px;
+  padding: 12px 16px;
+  border: 1px solid #747775;
+  border-radius: 10px;
+  background: #fff;
+  color: #1f1f1f;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 24px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px #241b3d0a, 0 4px 12px #241b3d08;
+  transition: box-shadow 150ms ease, border-color 150ms ease;
+}
+
+.button img {
+  width: 20px;
+  height: auto;
+  flex-shrink: 0;
+}
+
+.button:hover:not(:disabled) {
+  border-color: #4c4360;
+  box-shadow: 0 2px 6px #241b3d14, 0 5px 16px #241b3d12;
+}
+
+.button:active:not(:disabled) {
+  box-shadow: 0 1px 3px #241b3d14;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.button[aria-busy="true"] {
+  cursor: wait;
+}
+
+.control .error {
+  margin: 0;
+  color: #9a283c;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: normal;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+}

@@ -109,7 +109,7 @@
 .heroActions {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
 }
 .explore {
@@ -128,12 +128,6 @@
 }
 .explore:hover {
   background: #f1ecff;
-}
-.signInNote {
-  display: block;
-  margin-top: 18px;
-  font-size: 14px;
-  color: #615974;
 }
 .features {
   display: grid;
@@ -416,12 +410,6 @@
   letter-spacing: -1.6px;
   margin-bottom: 24px;
 }
-.invitation p {
-  display: inline-block;
-  margin-left: 20px;
-  font-size: 14px;
-  color: #605571;
-}
 .footer {
   min-height: 100px;
   padding: 20px 32px;
@@ -532,6 +520,8 @@
     display: none;
   }
   .heroActions {
+    flex-direction: column;
+    align-items: center;
     gap: 10px;
   }
   .heroActions .start,
@@ -540,9 +530,6 @@
     font-size: 14px;
     gap: 8px;
     min-height: 48px;
-  }
-  .signInNote {
-    font-size: 13px;
   }
   .features {
     grid-template-columns: 1fr;
@@ -626,10 +613,6 @@
   .invitation h2 {
     max-width: 260px;
     font-size: 38px;
-  }
-  .invitation p {
-    display: block;
-    margin: 16px 0 0;
   }
   .footer {
     padding: 20px;

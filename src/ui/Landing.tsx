@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import Brand from "./Brand";
+import GoogleSignInButton from "./GoogleSignInButton";
 import { Icon } from "./Icon";
 import styles from "./Landing.module.css";
 
@@ -158,13 +159,12 @@ export default function Landing() {
               <br className={styles.desktopBreak} /> in one personal workspace.
             </p>
             <div className={styles.heroActions}>
-              <StartLink />
+              <GoogleSignInButton />
               <a className={styles.explore} href="#preview">
                 Take a look
                 <Arrow />
               </a>
             </div>
-            <span className={styles.signInNote}>Sign in with Google</span>
           </div>
         </section>
         <section
@@ -236,8 +236,7 @@ export default function Landing() {
             <h2 id="invitation-title">
               Start with <span>one task.</span>
             </h2>
-            <StartLink />
-            <p>Sign in with Google</p>
+            <GoogleSignInButton />
           </div>
         </section>
       </main>

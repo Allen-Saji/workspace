@@ -36,3 +36,7 @@ are discovery controls, not authorization; page and API authorization remain sep
 
 The web app manifest launches `/app`, which applies the normal authentication
 boundary. No offline support or service worker is implied by the manifest.
+
+## Google sign-in mark
+
+`public/brand/google-g.png` is the Google G asset from the [Google Identity branding guidelines](https://developers.google.com/identity/branding-guidelines), downloaded from [Google's asset URL](https://developers.google.com/static/identity/images/g-logo.png). Keep its colors and aspect ratio intact. The shared sign-in control uses the existing Google OAuth endpoint from both the landing and sign-in pages.
