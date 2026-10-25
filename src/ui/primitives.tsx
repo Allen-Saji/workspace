@@ -1,23 +1,97 @@
-import Image from 'next/image';
-import { useEffect, useRef } from 'react';
-export function Illustration({name,className=''}:{name:string;className?:string}) {
-  return <Image className={`illustration ${className}`} src={`/illustrations/${name}.png`} width={240} height={200} alt="" unoptimized/>;
+import Image from "next/image";
+import { useEffect, useId, useRef } from "react";
+export function Illustration({
+  name,
+  className = "",
+}: {
+  name: string;
+  className?: string;
+}) {
+  return (
+    <Image
+      className={`illustration ${className}`}
+      src={`/illustrations/${name}.png`}
+      width={240}
+      height={200}
+      alt=""
+      unoptimized
+    />
+  );
 }
-export function Icon({name}:{name:string}) {
-  const paths:Record<string,React.ReactNode> = {
-    today:<><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></>,
-    learning:<><path d="M12 5v16M12 5C8 2 4 3 2 4v15c4-1 7-1 10 2 3-3 6-3 10-2V4c-2-1-6-2-10 1Z"/></>,
-    agents:<><rect x="3" y="6" width="18" height="15" rx="5"/><path d="M12 2v4M1 12v4m22-4v4M8 12v2m8-2v2m-7 3h6"/></>,
-    context:<><path d="M5 2h10l4 4v16H5zM14 2v5h5M8 12h8M8 16h6"/></>,
-    note:<><path d="m4 16-1 5 5-1L21 7l-4-4ZM14 6l4 4"/></>,
+export { Icon } from "./Icon";
+export function Modal({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+  useEffect(() => {
+    const dialog = ref.current;
+    dialog?.showModal();
+    dialog?.querySelector<HTMLElement>("input, textarea, select")?.focus();
+    return () => dialog?.close();
+  }, []);
+  return (
+    <dialog
+      ref={ref}
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+      aria-labelledby={titleId}
+    >
+      <header className="modal-header">
+        <h2 id={titleId}>{title}</h2>
+        <button
+          className="icon-button"
+          onClick={onClose}
+          aria-label="Close dialog"
+        >
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20">
+            <path
+              d="m5 5 10 10M15 5 5 15"
+              stroke="currentColor"
+              strokeWidth="1.6"
+            />
+          </svg>
+        </button>
+      </header>
+      <div className="modal-body">{children}</div>
+    </dialog>
+  );
+}
+export function Badge({
+  children,
+  tone = "neutral",
+}: {
+  children: React.ReactNode;
+  tone?: string;
+}) {
+  return <span className={`badge ${tone}`}>{children}</span>;
+}
+export function readable(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+export function stamp(value: unknown) {
+  const s = readable(value);
+  return s
+    ? new Date(s).toLocaleString(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
+    : "Not reported";
+}
+
+export function scopeLabel(scope: string) {
+  const labels: Record<string, string> = {
+    "reports:append": "Send reports",
+    "captures:append": "Send captures",
+    "receipts:read": "Read own receipts",
   };
-  return <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{paths[name]??paths.note}</svg>;
+  return labels[scope] ?? scope;
 }
-export function Modal({title,onClose,children}:{title:string;onClose:()=>void;children:React.ReactNode}) {
-  const ref=useRef<HTMLDialogElement>(null);
-  useEffect(()=>{const dialog=ref.current;dialog?.showModal();dialog?.querySelector<HTMLElement>('input, textarea, select')?.focus();return()=>dialog?.close();},[]);
-  return <dialog ref={ref} onCancel={e=>{e.preventDefault();onClose();}} aria-labelledby="modal-title"><header className="modal-header"><h2 id="modal-title">{title}</h2><button className="icon-button" onClick={onClose} aria-label="Close dialog">×</button></header>{children}</dialog>;
-}
-export function Badge({children,tone='neutral'}:{children:React.ReactNode;tone?:string}) {return <span className={`badge ${tone}`}>{children}</span>;}
-export function readable(value:unknown) {return typeof value === 'string' ? value : '';}
-export function stamp(value:unknown) { const s=readable(value); return s ? new Date(s).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'}) : 'Not reported'; }
