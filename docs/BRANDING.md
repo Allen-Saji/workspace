@@ -1,40 +1,38 @@
-# Workspace brand assets and metadata
+# Workspace branding
 
-- `app/icon.svg`: scalable W/open-journal mark, navy on butter yellow with coral bookmark.
-- `app/favicon.ico`: embedded 32px PNG for conventional favicon requests.
-- `app/apple-icon.png`: 180x180 home-screen icon.
-- `app/opengraph-image.png`: 1200x630 static social card using the approved notebook
-  illustration. No private content, account names, screenshots or live claims.
-- `scripts/generate-brand.mjs`: reproducible local SVG/Sharp composition. Sharp is the
-  installed Next dependency; no external font, image or paid service call.
+Workspace uses a light floating-workshop theme: violet actions, lavender surfaces,
+a mint robot companion and small yellow accents. The public headline is
+"A place for your plans."
 
-Next's file metadata conventions serve icons and OG image with size/type/alt tags.
-Twitter uses summary_large_image with the same public brand art. Title/description
-cover day planning, tasks, goals, learning and agent reports without claiming general AI.
-Only workspace and login pages set noindex/nofollow/nocache. There is no site-wide
-robots exclusion that would block an eventual public landing page.
+## Assets
 
-`WORKSPACE_PUBLIC_ORIGIN` must only be set after the exact HTTPS deployment origin is
-verified. Do not set the intended workspace.allensaji.dev merely because it is planned.
-Locally, a validated loopback WORKSPACE_ORIGIN supplies local image URLs. No canonical
-is emitted for the private app/login pages. When a public landing is implemented, add
-its canonical at that page using the verified public origin; don't inherit `/` across
-all private routes. Deployment and social crawler availability are not yet verified.
+- `app/icon.svg`: source-controlled robot-head mark, also used in page branding.
+- `app/favicon.ico`: 16px, 32px and 48px PNG entries in a conventional ICO file.
+- `app/apple-icon.png`: 180x180 Apple home-screen icon.
+- `public/brand/icon-192.png` and `icon-512.png`: web app manifest icons.
+- `app/opengraph-image.png`: 1732x908 static social card with the robot and floating
+  islands. `app/opengraph-image.alt.txt` supplies its accessible description.
+- `public/landing/`: generated hero and closing illustrations without baked-in UI.
+- `public/arcade/`: robot sprite atlas and dashboard workshop illustration.
 
-## Isolated visual QA
+Run `node scripts/build-brand-icons.mjs` after editing `app/icon.svg` to regenerate
+its raster exports. This uses Sharp supplied by the pinned Next.js installation.
+The social card and larger illustrations are generated artwork; UI text remains HTML.
 
-`WORKSPACE_QA_BUILD=1` selects `.next-qa`, preserving the existing `.next` review build.
-Build and run on 127.0.0.1:3218 with WORKSPACE_STORAGE=sqlite and
-WORKSPACE_CONNECTIONS=ephemeral-test. `node scripts/browser-qa.mjs` launches a separate
-headless Edge using Playwright core, with fresh contexts at 1440x1000 and 390x844.
-It mocks only the workspace snapshot with empty synthetic UI data, blocks non-loopback
-requests, and uses real in-memory test pairing routes. It never opens the user's browser
-profile, Auth session or personal SQLite file. Evidence stays in ignored artifacts/.
-The script checks viewport width/overflow, review/cancel/back/reload/revocation,
-rendered metadata, served asset dimensions/types and runtime JS errors.
+## Routes and metadata
 
-Verified 2026-10-24: actual rendered HTML contains title/description, summary_large_image,
-OG width 1200/height 630, icon/apple links and private-page noindex. No invented canonical
-or proposed public domain is emitted. Image routes returned 200 with expected content
-types and dimensions. Both generated images were viewed. Desktop/mobile screenshots
-are artifacts/agent-desktop-qa.png and artifacts/agent-mobile-qa.png (synthetic only).
+- `/`: public landing page. Verified signed-in users redirect to `/app`.
+- `/login`: Google sign-in; verified signed-in users redirect to `/app`.
+- `/app`: authenticated hosted dashboard. Explicit loopback SQLite development
+  continues to work without hosted authentication.
+- `/connect`: agent permission review. It is not a public search entry point.
+
+Set `WORKSPACE_PUBLIC_ORIGIN` to the verified HTTPS production origin, without a
+trailing slash, to enable the landing canonical URL, public indexing and the
+single-entry sitemap. Without it, previews remain non-indexable and the sitemap
+is empty. Never infer a public domain from incoming Host headers or preview URLs.
+Private routes declare noindex and are excluded from the sitemap. Robots rules
+are discovery controls, not authorization; page and API authorization remain separate.
+
+The web app manifest launches `/app`, which applies the normal authentication
+boundary. No offline support or service worker is implied by the manifest.

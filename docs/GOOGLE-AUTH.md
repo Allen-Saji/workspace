@@ -2,6 +2,10 @@
 
 Google is now the primary login UI. Email/password forms are removed from the main page; the existing email API and provider are preserved. No migration or change to user data, email confirmation, RLS, or membership checks is part of this change.
 
+## Current page flow
+
+The public landing page is `/`. Google sign-in starts at `/login`; successful callbacks enter `/app`. Verified sessions visiting `/` or `/login` redirect to `/app`, and signed-out visits to `/app` redirect to `/login`. Sign-out returns to `/`. API authorization remains independent of these page redirects.
+
 ## Activation boundary
 WORKSPACE_GOOGLE_AUTH defaults to disabled. Enable it only after the project's Google provider has been configured and reviewed. The flag is an operator readiness gate, not a live provider-health check. A provider outage after activation still yields a recoverable sign-in failure. No Google secret belongs in the application environment or repository.
 
