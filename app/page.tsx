@@ -1,4 +1,6 @@
-import type { Metadata } from 'next';
-import Workspace from '../src/ui/Workspace';
-export const metadata:Metadata={robots:{index:false,follow:false,nocache:true}};
-export default function Page() { return <Workspace/>; }
+import Landing from "../src/ui/Landing";
+import { landingMetadata } from "../src/server/metadata";
+export const metadata = landingMetadata();
+export default function Home() {
+  return <Landing />;
+}

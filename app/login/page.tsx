@@ -1,12 +1,32 @@
-import type { Metadata } from 'next';
-import { runtimeConfig } from '../../src/server/config.ts';
-import { googleAvailable } from '../../src/server/google-auth.ts';
-import GoogleLogin from './google-login';
-export const metadata:Metadata={title:'Sign in',robots:{index:false,follow:false,nocache:true}};
-export const dynamic = 'force-dynamic';
-export default async function Login({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+import type { Metadata } from "next";
+import { runtimeConfig } from "../../src/server/config.ts";
+import { googleAvailable } from "../../src/server/google-auth.ts";
+import GoogleLogin from "./google-login";
+export const metadata: Metadata = {
+  title: "Sign in",
+  robots: { index: false, follow: false, nocache: true },
+};
+export const dynamic = "force-dynamic";
+export default async function Login({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const query = await searchParams;
   let available = false;
-  try { available = googleAvailable(runtimeConfig()); } catch { /* Fail closed if configuration is incomplete. */ }
-  return <GoogleLogin available={available} failed={query.confirmation === 'failed'} />;
+  let localDevelopment = false;
+  try {
+    const config = runtimeConfig();
+    available = googleAvailable(config);
+    localDevelopment = config.mode === "sqlite";
+  } catch {
+    /* Fail closed if configuration is incomplete. */
+  }
+  return (
+    <GoogleLogin
+      available={available}
+      failed={query.confirmation === "failed"}
+      localDevelopment={localDevelopment}
+    />
+  );
 }

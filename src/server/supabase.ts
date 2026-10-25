@@ -4,8 +4,8 @@ import type { RuntimeConfig } from './config.ts';
 
 export function requestClient(request: Request, config: Extract<RuntimeConfig, { mode: 'supabase' }>, headers: Headers) {
   const jar = new Map(parseCookieHeader(request.headers.get('cookie') ?? '').map(c => [c.name, c.value ?? '']));
-  // Route handlers own all auth/session work. No Server Component reads sessions,
-  // so refresh cookies can always be written here (no proxy refresh race).
+  // Only page proxy and route handlers verify sessions. No Server Component
+  // reads them; the page proxy excludes APIs to avoid duplicate refreshes.
   return createServerClient(config.url, config.publishableKey, {
     cookieOptions: { httpOnly: true, sameSite: 'lax', secure: config.origin.startsWith('https://'), path: '/' },
     cookies: {
