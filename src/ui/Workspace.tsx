@@ -11,12 +11,14 @@ import { reportedState, useReportClock } from "./report-clock";
 import Editor, { type EditTarget } from "./Editor";
 import ReportImport from "./ReportImport";
 import Companion from "./Companion";
+import AssistantPanel from "./AssistantPanel";
+import CalendarPanel from "./CalendarPanel";
 import Brand from "./Brand";
 import RobotSprite from "./RobotSprite";
 import ArcadeProgress from "./ArcadeProgress";
 import { reactionForSave, type PetReaction } from "./companion-state";
 import { Badge, Icon, Modal, readable as s, stamp } from "./primitives";
-type View = "today" | "learning" | "agents" | "context";
+type View = "today" | "calendar" | "learning" | "agents" | "context";
 type Snapshot = {
   workspaceId: string;
   storageMode: "sqlite" | "supabase";
@@ -25,15 +27,17 @@ type Snapshot = {
   lastReported: string | null;
   freshness: string;
 };
-const views: View[] = ["today", "learning", "agents", "context"];
+const views: View[] = ["today", "calendar", "learning", "agents", "context"];
 const labels = {
   today: "Today",
+  calendar: "Calendar",
   learning: "Learning",
   agents: "Agents",
   context: "Context",
 };
 const descriptions = {
   today: "Tasks, meetings, and notes.",
+  calendar: "Your meetings and available time.",
   learning: "Track what you are learning.",
   agents: "Reports and connected agents.",
   context: "Decisions and details worth keeping.",
@@ -124,6 +128,8 @@ export default function Workspace() {
     [detail, setDetail] = useState<WorkspaceRecord | StoredReport | null>(null),
     [working, setWorking] = useState(false);
   const [query, setQuery] = useState("");
+  const [assistant, setAssistant] = useState<{contextId?: string; prompt?: string} | null>(null);
+  const [assistantBusy, setAssistantBusy] = useState(false);
   const [petReaction, setPetReaction] = useState<PetReaction | null>(null);
   const [pendingSaves, setPendingSaves] = useState(0);
   const [commandOpen, setCommandOpen] = useState(false),
@@ -275,10 +281,12 @@ export default function Workspace() {
               <Companion
                 key={snapshot.workspaceId}
                 workspaceId={snapshot.workspaceId}
-                busy={pendingSaves > 0}
+                busy={pendingSaves > 0 || assistantBusy}
+                onAsk={() => setAssistant({})}
                 reaction={petReaction}
               />
             ) : null}
+            {snapshot ? <button className="text-button" onClick={() => setAssistant({})}>Ask assistant</button> : null}
             <button className="text-button" onClick={() => void refresh()}>
               Refresh
             </button>
@@ -319,6 +327,7 @@ export default function Workspace() {
         <div role="status">
           {notice ? <p className="save-notice">{notice}</p> : null}
         </div>
+        {view === "calendar" && snapshot ? <CalendarPanel key={snapshot.workspaceId} workspaceId={snapshot.workspaceId} onChanged={refresh} onAsk={(prompt) => setAssistant({prompt})} /> : null}
         {view === "today" && snapshot && !records.length && !reports.length ? (
           <section className="welcome-panel">
             <div>
@@ -343,11 +352,12 @@ export default function Workspace() {
                 <Icon name="context" />
               </span>
               <div>
-                <h2>Plan from text</h2>
-                <p>Review a draft before adding it to your day.</p>
+                <h2>What would you like to do?</h2>
+                <p>Ask your assistant, or enter a structured draft.</p>
               </div>
             </div>
             <div className="action-group">
+              <button className="primary" onClick={() => setAssistant({})}>Ask assistant</button>
               <button
                 className="text-button"
                 onClick={() => setHistoryOpen(true)}
@@ -458,6 +468,9 @@ export default function Workspace() {
                             {t.data.dueDate ? (
                               <small>{s(t.data.dueDate)}</small>
                             ) : null}
+                          </button>
+                          <button className="text-button task-assistant" aria-label={`Ask about ${s(t.data.title)}`} onClick={() => setAssistant({contextId:t.id})}>
+                            <Icon name="agents" />
                           </button>
                         </div>
                       ))}
@@ -773,9 +786,12 @@ export default function Workspace() {
                 ? "Private workspace"
                 : "Local workspace"}
           </span>
-          <span>Meetings are entered manually.</span>
+          <a href="#calendar">Calendar and meeting settings</a>
         </footer>
       </main>
+      {assistant && snapshot ? (
+        <AssistantPanel workspaceId={snapshot.workspaceId} records={records} contextId={assistant.contextId} initialPrompt={assistant.prompt} onClose={() => setAssistant(null)} onChanged={refresh} onBusy={setAssistantBusy} />
+      ) : null}
       {historyOpen ? (
         <CommandHistory
           onClose={() => setHistoryOpen(false)}

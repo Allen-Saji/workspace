@@ -841,7 +841,7 @@ legend {
   }
   .sidebar nav {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 4px;
     margin-top: 16px;
   }
@@ -993,4 +993,10 @@ details p {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
+}
+
+.task-assistant { flex-shrink: 0; min-width: 44px; min-height: 44px; }
+@media (max-width: 700px) {
+  .sidebar nav a { padding-inline: 3px; font-size: 11px; gap: 4px; }
+  .topbar > div { flex-wrap: wrap; }
 }

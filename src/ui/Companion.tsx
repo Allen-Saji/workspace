@@ -103,10 +103,12 @@ export default function Companion({
   workspaceId,
   busy,
   reaction,
+  onAsk,
 }: {
   workspaceId: string;
   busy: boolean;
   reaction: PetReaction | null;
+  onAsk?: () => void;
 }) {
   const key = `workspace-companion-v1:${workspaceId}`;
   const snapshot = useSyncExternalStore(
@@ -265,8 +267,8 @@ export default function Companion({
           {minimized ? (
             <button
               className={styles.restore}
-              onClick={() => update({ visibility: "shown" })}
-              aria-label="Restore robot companion"
+              onClick={() => onAsk ? onAsk() : update({ visibility: "shown" })}
+              aria-label={onAsk ? "Open workspace assistant" : "Restore robot companion"}
               onKeyDown={moveWithKeys}
             >
               <RobotSprite />
@@ -312,8 +314,8 @@ export default function Companion({
               </span>
               <button
                 className={styles.character}
-                aria-label="Say hello to the robot"
-                onClick={() => setWaving(true)}
+                aria-label={onAsk ? "Open workspace assistant" : "Say hello to the robot"}
+                onClick={() => { setWaving(true); onAsk?.(); }}
               >
                 <RobotSprite pose={pose} animated={moving} />
                 <span className={styles.pixel} />

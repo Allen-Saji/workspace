@@ -70,6 +70,8 @@ stay excluded. The web app manifest launches `/app`; it does not imply offline s
 
 ## Feature documentation
 
+- [Assistant and voice](docs/ASSISTANT.md)
+- [Google Calendar and imports](docs/CALENDAR.md)
 - [Commands and undo](docs/COMMANDS.md)
 - [Interpretation formats](docs/INTERPRETATION.md)
 - [Hosted agent connections](docs/HOSTED-CONNECTIONS.md)
@@ -77,7 +79,9 @@ stay excluded. The web app manifest launches `/app`; it does not imply offline s
 - [Agent diary](docs/AGENT-DIARY.md)
 - [Supabase architecture](docs/SUPABASE-PHASE.md)
 
-Calendar sync, voice providers and automatic external-agent scheduling are not
-connected. Flexible AI interpretation requires separate configuration and cost
-approval. A report receipt proves that Workspace saved the report, not that an
-external assistant remembers it or is currently working.
+The assistant requires server configuration and an approved daily budget. Google
+Calendar requires separate OAuth consent and refreshes on demand. Voice input uses
+browser speech recognition where available. External agents cannot automatically
+schedule meetings through these owner-only routes. A report receipt proves that
+Workspace saved the report, not that an external assistant remembers it or is
+currently working.
