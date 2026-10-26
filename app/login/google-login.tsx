@@ -45,6 +45,7 @@ export default function GoogleLogin({
             when you sign in.
           </p>
         </details>
+        <Link href="/privacy">Privacy and your data</Link>
       </div>
     </main>
   );

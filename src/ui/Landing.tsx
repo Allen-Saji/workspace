@@ -245,6 +245,7 @@ export default function Landing() {
         <nav aria-label="Footer navigation">
           <a href="#features">Features</a>
           <a href="#how-it-works">How it works</a>
+          <Link href="/privacy">Privacy</Link>
           <Link href="/login">Sign in</Link>
         </nav>
       </footer>
