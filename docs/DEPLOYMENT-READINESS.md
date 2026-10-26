@@ -1,33 +1,96 @@
-# Deployment readiness — 2026-10-24
+# Production deployment
 
-This is an audit, not a deployed-site claim. The intended `workspace.allensaji.dev` origin has not been configured or verified. No DNS, credentials, hosted grants or billing were changed by this audit.
+Workspace runs on Vercel's Node 24 runtime with Supabase storage. SQLite is restricted
+to loopback development and fails closed on Vercel. The application does not need a
+Supabase service-role key. Production must use an exact HTTPS origin.
 
-## Platform fit
+## Required configuration
 
-The Supabase-backed Next.js app is a candidate for Vercel's Node runtime. Vercel documents [Node 24.x support](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions). [Hobby](https://vercel.com/docs/plans/hobby) is free within its limits and restricted to personal, non-commercial use; confirm the intended public/hackathon use qualifies before release. Free quotas can stop availability and are not unlimited capacity. No paid add-ons are required by the current app architecture.
+Set production variables in the hosting provider's secret controls. Keep preview and
+development credentials separate, and never include `.env.local` in deployment source.
 
-Local SQLite is development-only and already refused when VERCEL is set. Hosted repositories derive ownership from the verified session and use Supabase RPCs. The standalone OpenAI test ledger also now refuses Vercel before opening or creating a file. Do not put it in `/tmp`: neither an instance-local file nor memory is a cross-instance spending limit. Hosted AI needs a separate reviewed durable transactional budget design and explicit spend authorization. Keep AI transport disabled and do not configure an OpenAI key for an initial release.
+- `WORKSPACE_STORAGE=supabase`
+- `WORKSPACE_ORIGIN`: exact HTTPS origin, without a trailing slash
+- `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`
+- `WORKSPACE_GOOGLE_AUTH=enabled`
+- `WORKSPACE_SELF_ONBOARDING=enabled`, after its migration is installed
+- `WORKSPACE_PUBLIC_ORIGIN`: set only after verifying the custom domain and HTTPS
 
-## Concrete release blockers
+The public origin enables landing-page canonical metadata and the sitemap. Dashboard,
+login, approval, and API routes remain private or non-indexable as appropriate. Noindex
+is not access control; session verification and database ownership checks protect data.
 
-1. Public agent exposure needs a release review. Device authorization is source-activated and hosted legacy routes can activate with WORKSPACE_CONNECTIONS=hosted. These existing gates are **not Vercel-specific approvals**. Do not deploy the current branch publicly without either disabling public onboarding/report transport or approving/hardening that release. Supabase's direct RPC surface is already active; hiding a Next route alone does not remove it.
-2. Database setup/report rate buckets are global, so one caller can consume shared capacity. Add/review per-caller abuse controls, bounded retention/cleanup and operational monitoring before opening registration broadly. Host/Origin validation, owner session checks, proof binding and token scopes are not substitutes for abuse protection. Public signup also needs quota/abuse review.
-3. Live old-token probes, second-user isolation and independent hosted concurrency remain incomplete. Prior embedded checks and revoked-token-hash removal must not be described as those live tests.
-4. Verify Google audience/test-user/public consent readiness before inviting arbitrary users. Keep confirmation, nonce, PKCE and RLS protections. No provider-secret copy is needed in Vercel.
-5. Select and verify the exact HTTPS origin. App requests enforce exact Host/Origin; random preview domains will not automatically work. Add only the approved callback to Supabase's redirect allowlist. Vercel now rejects a configured HTTP loopback app origin.
+Optional assistant and Calendar variables are documented in [ASSISTANT.md](ASSISTANT.md)
+and [CALENDAR.md](CALENDAR.md). Preserve `WORKSPACE_INTEGRATION_KEY` across deployments:
+overwriting it without migrating encrypted records breaks existing connections and
+request recovery. The assistant uses a durable Supabase reservation ledger, with an
+explicitly enabled owner and a shared $1 daily ceiling. This does not limit unrelated
+use of the same OpenAI key.
 
-## Configuration and privacy
+## Authentication and domains
 
-Required server configuration: WORKSPACE_STORAGE=supabase, WORKSPACE_ORIGIN (exact HTTPS), SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY. Enable WORKSPACE_GOOGLE_AUTH and WORKSPACE_SELF_ONBOARDING only for the existing reviewed provider/schema. Supply configuration using the hosting environment controls, not committed files or next.config env bundling. No service-role/admin keys are required. Keep WORKSPACE_CONNECTIONS unset until the public agent decision above; this alone does not disable the separately activated device route.
+Add the custom domain to the Vercel project and use the DNS records returned for that
+project. Verify HTTPS before advertising the hostname. Preserve unrelated DNS records.
 
-Set WORKSPACE_PUBLIC_ORIGIN only after the public HTTPS origin is verified, before the production build. It enables the canonical public landing URL and a sitemap containing only `/`. Without it, previews remain non-indexable. The hosted dashboard is `/app`; it requires a verified session. Login and approval pages remain noindex. Metadata and social images contain only generic branding and fictional example content, never user records. Noindex is not access control: page and API authentication, no-store headers and owner isolation are the protections. The static skill/contract is intentionally public and contains no credentials. See BRANDING.md for the current asset and route map.
+Configure the exact `/auth/callback` URL in Supabase's redirect allowlist and set its
+Site URL to the production origin. Retain only development callbacks still in use.
+The Google sign-in client redirects to Supabase's existing Auth callback. The separate
+Calendar callback is `<production-origin>/auth/calendar/callback`.
 
-## Minimal next release sequence
+Google OAuth publishing and Google verification are separate steps. Basic profile
+sign-in can work while the OAuth application is in Testing. Calendar access in Testing
+requires an approved test user and can expire after seven days. Broader distribution
+requires completed branding, an accessible privacy policy, domain verification where
+required, declared scopes, and any review Google requests. Do not describe a published
+or unverified app as Google-approved.
 
-- Complete the blockers above and choose a free, eligible hosting target; no upgrade or trial.
-- Obtain scoped deployment/configuration approval, set only required server variables, and keep model calls off.
-- Approve the exact public OAuth callback and any intended DNS/domain change separately; no paid Supabase custom Auth domain is required for the app hostname.
-- Deploy only the reviewed commit, verify Node/runtime, auth callback, owner isolation, private caching, static skill and public abuse behavior on the actual origin. Verify no persistent writes rely on deployment files.
-- Preserve a rollback commit and disable newly exposed entry points if validation fails. Do not delete user data or replay migrations to roll back the UI.
+## External agent transport
 
-Audit stopped at the Linux handoff boundary. No hosted deployment/build, new provider call, new credential or public traffic validation occurred.
+For a demo release without public agent onboarding, leave `WORKSPACE_CONNECTIONS`
+unset and disable both database activation rows. Environment gating alone does not
+close the direct Supabase RPC surface:
+
+```sql
+update workspace_private.agent_activation set enabled=false where singleton;
+update workspace_private.device_activation set enabled=false where singleton;
+```
+
+These switches preserve existing records and audit history. Public agent rollout needs
+its own abuse controls, retention, operational monitoring, and token lifecycle review.
+Registration and polling buckets are global; one caller can consume shared capacity.
+Review signup and ordinary workspace-write abuse controls before broad promotion too.
+
+## Release verification
+
+- Run tests, lint, typecheck, and a production build for the reviewed source.
+- Verify new-account sign-in and the existing owner's session on the actual origin.
+- Confirm anonymous API reads and cross-origin writes fail with no-store responses.
+- Check separate-account records, history, Calendar access, and paid-AI denial.
+- Submit conflicting edits from independent clients; stale writes must fail visibly.
+- Test a Calendar create and edit without attendees before testing invitations.
+- Test microphone transcription in the intended demo browser. API presence alone is
+  insufficient; browser speech services can fail even when their interface exists.
+- Inspect database advisors and privileges. RPC-only private tables intentionally have
+  RLS with no direct-access policies; do not add permissive policies to silence notices.
+- Verify public metadata, robots, sitemap, icons, and social images contain no user data.
+- Confirm enabled paid requests use the existing durable ledger, not a fresh allowance.
+
+Do not replay migrations blindly. Connector-applied migration versions can differ from
+local filenames; compare migration names and installed definitions before changes.
+
+## Rollback and incident handling
+
+Keep the last known working deployment and its configuration. Roll back application
+code without deleting user data or replaying schema migrations. Close agent transport
+at the database switches if its rollout fails. Disable assistant access if paid-request
+controls fail. Never log environment values, OAuth credentials, audio, or raw provider
+errors. Rotate exposed provider credentials through their provider and replace the
+hosting secrets; migrate encrypted data before rotating the integration encryption key.
+
+## References
+
+- [Vercel Node versions](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions)
+- [Vercel Hobby limits](https://vercel.com/docs/plans/hobby)
+- [Supabase redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls)
+- [Google OAuth audience](https://support.google.com/cloud/answer/15549945?hl=en)
+- [Google brand verification](https://developers.google.com/identity/protocols/oauth2/production-readiness/brand-verification)
