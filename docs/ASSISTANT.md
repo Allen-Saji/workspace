@@ -2,7 +2,7 @@
 
 Open **Ask assistant**, click the robot companion, or use the assistant icon beside
 an existing task. Type a request or use the microphone in a browser that supports
-speech recognition. The transcript is editable and is never submitted automatically.
+audio recording. The transcript is editable and is never submitted automatically.
 Optional spoken replies use the browser's speech synthesis and start disabled.
 
 The assistant can create and edit tasks, notes and local meetings, read a calendar
@@ -74,10 +74,19 @@ encryption key backed up and exclude it from logs and source control.
 
 ## Voice and calendar limits
 
-Speech recognition support and microphone permission depend on the browser. Some
-browsers send speech to their own recognition service. The app keeps no recording;
-text input remains available when voice is unavailable. Recognition stops when the
-panel closes or the page becomes hidden.
+Voice input records up to sixty seconds after an explicit microphone click. Stopping
+sends a canonical 16 kHz mono PCM WAV to the authenticated transcription endpoint,
+then to OpenAI's `gpt-transcribe` model. The server verifies duration from the audio
+bytes and reserves $0.05 from the same daily ledger before contacting OpenAI.
+Recordings remain in memory and are not persisted by Workspace. Encrypted transcript
+replay results are retained in the existing request ledger. Closing the panel or
+hiding the page cancels capture; no task or event is submitted automatically.
+
+This avoids relying on the browser's speech recognition service. Microphone permission
+and MediaRecorder/Web Audio support are still required. Typed input remains available.
+[File transcription](https://developers.openai.com/api/docs/guides/speech-to-text)
+and [pricing](https://developers.openai.com/api/docs/pricing) were checked on October
+25, 2026: a sixty-second recording is estimated at $0.0045 before fees.
 
 See [Calendar setup](CALENDAR.md) for separate OAuth consent, provider settings,
 import limits and event confirmation. Calendar refresh is on demand rather than a

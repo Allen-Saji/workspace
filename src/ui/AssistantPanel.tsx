@@ -205,14 +205,15 @@ export default function AssistantPanel({
   const log = useRef<HTMLDivElement>(null);
   const voicePrefix = useRef("");
   const busyCallback = useRef(onBusy);
-  const voice = useVoiceInput((transcript) =>
+  const voice = useVoiceInput((transcript) => {
+    setStatusAttempt(value => value + 1);
     setText(
       [voicePrefix.current, transcript]
         .filter(Boolean)
         .join(" ")
         .slice(0, 4000),
-    ),
-  );
+    );
+  });
   const context = records.find((record) => record.id === contextId);
   useEffect(() => {
     busyCallback.current = onBusy;
@@ -293,7 +294,7 @@ export default function AssistantPanel({
     setBusy(true);
     busyCallback.current?.(true);
     setError("");
-    voice.stop();
+    voice.cancel();
     const abort = new AbortController();
     controller.current = abort;
     return abort;
@@ -449,7 +450,7 @@ export default function AssistantPanel({
       title="Workspace assistant"
       onClose={() => {
         if (!lock.current) {
-          voice.stop();
+          voice.cancel();
           onClose();
         } else
           setError(
@@ -732,8 +733,8 @@ export default function AssistantPanel({
         >
           <label htmlFor="assistant-request" className={styles.hint}>
             {voice.listening
-              ? "Listening. Your words appear below; review before sending."
-              : "Your request"}
+              ? "Recording, up to one minute. Stop to transcribe."
+              : voice.processing ? "Transcribing your recording..." : "Your request"}
           </label>
           <textarea
             id="assistant-request"
@@ -750,7 +751,7 @@ export default function AssistantPanel({
                 !event.nativeEvent.isComposing
               ) {
                 event.preventDefault();
-                if (!voice.listening) void send();
+                if (!voice.listening && !voice.processing) void send();
               }
             }}
           />
@@ -758,7 +759,7 @@ export default function AssistantPanel({
             <button
               type="button"
               className={`secondary ${voice.listening ? styles.listening : ""}`}
-              disabled={!voice.supported || busy || !!retry}
+              disabled={!voice.supported || voice.processing || busy || !!retry || !status?.available}
               aria-pressed={voice.listening}
               onClick={() => {
                 if (voice.listening) voice.stop();
@@ -776,6 +777,7 @@ export default function AssistantPanel({
               disabled={
                 busy ||
                 voice.listening ||
+                voice.processing ||
                 !!retry ||
                 !text.trim() ||
                 !status?.available
@@ -810,7 +812,7 @@ export default function AssistantPanel({
           </div>
           <p className={styles.hint}>
             {voice.supported
-              ? "Voice uses your browser's speech service. Edit the transcript before sending."
+              ? "Voice recordings go to OpenAI for transcription, then are discarded by Workspace. Edit the text before sending. Each recording reserves $0.05 from the daily AI budget."
               : "Voice input is unavailable in this browser. Type your request above."}{" "}
             Requests and relevant context go to OpenAI. Calendar changes need confirmation.
           </p>

@@ -10,7 +10,7 @@ export function guard(request: Request, mutation = false, expectedOrigin = runti
   if (origin && origin !== expectedOrigin) throw new DomainError('origin_denied');
   if (mutation && (origin !== expectedOrigin || request.headers.get('x-workspace-request') !== 'local-ui' || request.headers.get('content-type') !== 'application/json')) throw new DomainError('csrf_denied');
 }
-export async function boundedJson(request: Request): Promise<unknown> {
+export async function boundedJson(request: Request, maxBytes = 65536): Promise<unknown> {
   const reader = request.body?.getReader();
   if (!reader) throw new DomainError('missing_body');
   const chunks: Uint8Array[] = []; let size = 0;
@@ -18,7 +18,7 @@ export async function boundedJson(request: Request): Promise<unknown> {
     const {done,value} = await reader.read();
     if (done) break;
     size += value.length;
-    if (size > 65536) { await reader.cancel(); throw new DomainError('payload_too_large'); }
+    if (size > maxBytes) { await reader.cancel(); throw new DomainError('payload_too_large'); }
     chunks.push(value);
   }
   try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); }
