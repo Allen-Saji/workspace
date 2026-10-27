@@ -1,0 +1,313 @@
+.root {
+  padding-bottom: 24px;
+}
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.tabs {
+  display: flex;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f1edfc;
+  margin-right: auto;
+}
+.tabs button {
+  min-height: 44px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+.tabs button[aria-pressed="true"] {
+  background: #fff;
+  color: var(--accent);
+  box-shadow: 0 1px 4px #29213b12;
+}
+.date {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 14px;
+  color: var(--muted);
+}
+.date input {
+  min-height: 44px;
+  width: 170px;
+  font-size: 16px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 9px;
+}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.editor,
+.card,
+.agentView {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 18px;
+  padding: clamp(20px, 3vw, 32px);
+  min-width: 0;
+}
+.editor {
+  box-shadow: 0 4px 0 #eee9fb;
+}
+.editorHeading,
+.agentHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.eyebrow {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.editorHeading h2 {
+  font-size: 24px;
+  letter-spacing: -0.65px;
+  margin-top: 6px;
+}
+.small {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+.editor > label,
+.agentView > label {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.hint {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 14px;
+}
+.editor textarea {
+  width: 100%;
+  min-height: 340px;
+  padding: 20px;
+  border: 1px solid #dcd5ed;
+  border-radius: 12px;
+  resize: vertical;
+  background: #fefdfb;
+  font-size: 17px;
+  line-height: 1.8;
+}
+.editor textarea::placeholder {
+  color: #7a7587;
+}
+.editor textarea:disabled {
+  opacity: 0.8;
+}
+.draftMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 12px;
+  margin-block: 10px 20px;
+}
+.editorActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.sidebar {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.card:first-child {
+  background: #f0ecff;
+  border-color: #ded6f5;
+}
+.card h2 {
+  margin-bottom: 12px;
+}
+.card p,
+.card li {
+  color: var(--muted);
+  font-size: 14px;
+}
+.card ul {
+  padding-left: 18px;
+  margin-block: 16px 24px;
+}
+.card li + li {
+  margin-top: 8px;
+}
+.recent {
+  padding: 0 !important;
+  list-style: none;
+  margin: 0 !important;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.recent li + li {
+  margin-top: 0;
+}
+.recent button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  text-align: left;
+  font-size: 14px;
+}
+.recent button[aria-current="date"] {
+  color: var(--accent);
+  font-weight: 600;
+}
+.recent small {
+  font-size: 11px;
+}
+.conflict {
+  border: 1px solid #e8c68d;
+  background: #fff8e9;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.conflict details {
+  margin-block: 12px;
+}
+.entryText {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}
+.agentView > select {
+  width: min(100%, 340px);
+  min-height: 44px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 8px 12px;
+  margin-bottom: 24px;
+  font-size: 16px;
+}
+.notice {
+  background: #f8f6ff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+.agentEntry {
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+  margin-top: 20px;
+}
+.agentEntry .agentHeading {
+  margin-bottom: 12px;
+}
+.agentEntry h4 {
+  margin-top: 18px;
+}
+.agentEntry ul {
+  margin-block: 8px 16px;
+  padding-left: 20px;
+}
+.agentEntry li {
+  overflow-wrap: anywhere;
+}
+.empty {
+  border: 1px dashed #dcd4ef;
+  border-radius: 12px;
+  padding: 32px 20px;
+  text-align: center;
+  background: #fdfcff;
+}
+.empty p {
+  color: var(--muted);
+  font-size: 14px;
+  max-width: 480px;
+  margin: 12px auto;
+}
+.revision {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.revision summary {
+  cursor: pointer;
+  min-height: 44px;
+  align-content: center;
+  font-size: 14px;
+}
+.revision p {
+  margin-top: 12px;
+}
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sidebar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .controls {
+    gap: 10px;
+  }
+  .tabs {
+    width: 100%;
+    margin-right: 0;
+  }
+  .tabs button {
+    flex: 1;
+    padding-inline: 10px;
+  }
+  .layout {
+    gap: 16px;
+  }
+  .sidebar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .editor textarea {
+    padding: 14px;
+    font-size: 16px;
+    min-height: 300px;
+  }
+  .editorHeading h2 {
+    font-size: 22px;
+  }
+  .editorActions button {
+    flex: 1;
+  }
+  .date input {
+    width: 160px;
+  }
+  .editorHeading {
+    gap: 8px;
+  }
+}

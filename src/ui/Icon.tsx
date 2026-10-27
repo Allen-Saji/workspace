@@ -1,5 +1,6 @@
 export function Icon({ name }: { name: string }) {
   const paths: Record<string, React.ReactNode> = {
+    journal: (<><path d="M5 3h13a2 2 0 0 1 2 2v16H6a3 3 0 0 1-3-3V6a3 3 0 0 1 2-3Zm1 0v18M10 8h6m-6 4h6M3 17h3" /></>),
     focus: (<><circle cx="12" cy="14" r="8" /><path d="M9 2h6M12 2v4m6 1 2-2m-8 6v4l3 2" /></>),
     today: (
       <>

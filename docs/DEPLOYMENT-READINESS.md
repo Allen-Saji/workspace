@@ -63,6 +63,9 @@ Review signup and ordinary workspace-write abuse controls before broad promotion
 ## Release verification
 
 - Run tests, lint, typecheck, and a production build for the reviewed source.
+- Verify the installed personal_journal migration and owner-checked RPC match
+  [Journal database setup](JOURNAL.md#database-setup). Test save/reload and revisions
+  on the release origin before demonstrating Journal.
 - Verify new-account sign-in and the existing owner's session on the actual origin.
 - Confirm anonymous API reads and cross-origin writes fail with no-store responses.
 - Check separate-account records, history, Calendar access, and paid-AI denial.

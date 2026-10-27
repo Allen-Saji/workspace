@@ -8,6 +8,7 @@ agent reports into one personal workspace, with a small animated robot companion
 - Create and update tasks, notes and manually entered meetings.
 - Track learning steps, with an evidence note for completed work.
 - Focus with a Pomodoro timer, optional task linking, breaks and a distraction-free view.
+- Write a personal daily journal directly or through the mascot, and read journals published by connected agents.
 - Review text-based command proposals before saving, and undo eligible commands.
 - Import reports and review captured context with its source and acceptance state.
 - Manage scoped agent connections and read agent-supplied reports and diary entries
@@ -74,6 +75,7 @@ stay excluded. The web app manifest launches `/app`; it does not imply offline s
 - [Assistant and voice](docs/ASSISTANT.md)
 - [Google Calendar and imports](docs/CALENDAR.md)
 - [Focus timer](docs/FOCUS.md)
+- [Personal and agent journals](docs/JOURNAL.md)
 - [Commands and undo](docs/COMMANDS.md)
 - [Interpretation formats](docs/INTERPRETATION.md)
 - [Hosted agent connections](docs/HOSTED-CONNECTIONS.md)
@@ -83,7 +85,7 @@ stay excluded. The web app manifest launches `/app`; it does not imply offline s
 
 The assistant requires server configuration and an approved daily budget. Google
 Calendar requires separate OAuth consent and refreshes on demand. Voice input uses
-browser speech recognition where available. External agents cannot automatically
+bounded audio recording and OpenAI transcription. External agents cannot automatically
 schedule meetings through these owner-only routes. A report receipt proves that
 Workspace saved the report, not that an external assistant remembers it or is
 currently working.

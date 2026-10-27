@@ -6,6 +6,7 @@ import { Modal } from "./primitives";
 import RobotSprite from "./RobotSprite";
 import { useVoiceInput } from "./useVoiceInput";
 import styles from "./AssistantPanel.module.css";
+import type { PersonalWrite } from "../journal/personal";
 
 type CalendarEvent = {
   title: string;
@@ -20,6 +21,7 @@ type Reply = {
   proposal?: Proposal;
   receipt?: CommandReceipt;
   calendarProposal?: { proposal: string; event: CalendarEvent };
+  journalProposal?: PersonalWrite;
   events?: CalendarEvent[];
   slots?: { start: string; end: string }[];
 };
@@ -37,6 +39,7 @@ type Message = {
   result?: Reply;
   calendarSaved?: boolean;
   calendarExpired?: boolean;
+  journalSaved?: boolean;
 };
 type Status = {
   available: boolean;
@@ -50,8 +53,19 @@ const headers = {
   "Content-Type": "application/json",
   "X-Workspace-Request": "local-ui",
 };
-const previewLabels: Record<string, string> = {title: "Title", status: "Status", dueDate: "Due date", content: "Content", start: "Starts", end: "Ends"};
-const taskStatuses: Record<string, string> = {ready: "To do", in_progress: "In progress", done: "Done"};
+const previewLabels: Record<string, string> = {
+  title: "Title",
+  status: "Status",
+  dueDate: "Due date",
+  content: "Content",
+  start: "Starts",
+  end: "Ends",
+};
+const taskStatuses: Record<string, string> = {
+  ready: "To do",
+  in_progress: "In progress",
+  done: "Done",
+};
 function previewValue(key: string, value: unknown) {
   if (value === "" || value == null) return "Not set";
   if (key === "status") return taskStatuses[String(value)] ?? String(value);
@@ -98,6 +112,11 @@ function errorMessage(
       "Reconnect Google Calendar from the Calendar screen.",
     assistant_unavailable:
       "The assistant is temporarily unavailable. Your request is preserved.",
+    journal_revision_conflict:
+      "This day's journal changed elsewhere. Your preview is preserved. Open Journal to compare the saved entry before requesting a new preview.",
+    journal_future_date: "Choose today or an earlier date for a journal entry.",
+    timezone_conflict:
+      "This day already has a saved timezone. Open Journal to continue editing it.",
   };
   return (
     (code && messages[code]) ||
@@ -151,6 +170,36 @@ function pendingCalendar(workspaceId?: string): Message[] {
     return [];
   }
 }
+function pendingJournals(workspaceId?: string): Message[] {
+  if (!workspaceId || typeof window === "undefined") return [];
+  try {
+    const value = JSON.parse(
+      sessionStorage.getItem(`workspace-assistant-journal-${workspaceId}`) ??
+        "[]",
+    );
+    if (!Array.isArray(value)) return [];
+    return value
+      .filter(
+        (item) =>
+          typeof item.id === "string" &&
+          item.journalProposal &&
+          typeof item.journalProposal.content === "string" &&
+          item.journalProposal.content.length <= 12000 &&
+          typeof item.journalProposal.localDate === "string",
+      )
+      .map((item) => ({
+        id: item.id,
+        role: "assistant",
+        text: "Review your pending journal entry.",
+        result: {
+          reply: "Review your pending journal entry.",
+          journalProposal: item.journalProposal,
+        },
+      }));
+  } catch {
+    return [];
+  }
+}
 export default function AssistantPanel({
   records,
   workspaceId,
@@ -179,6 +228,7 @@ export default function AssistantPanel({
   );
   const [messages, setMessages] = useState<Message[]>(() => [
     ...pendingCalendar(workspaceId),
+    ...pendingJournals(workspaceId),
     ...(savedRequest
       ? [
           {
@@ -206,7 +256,7 @@ export default function AssistantPanel({
   const voicePrefix = useRef("");
   const busyCallback = useRef(onBusy);
   const voice = useVoiceInput((transcript) => {
-    setStatusAttempt(value => value + 1);
+    setStatusAttempt((value) => value + 1);
     setText(
       [voicePrefix.current, transcript]
         .filter(Boolean)
@@ -251,6 +301,22 @@ export default function AssistantPanel({
       else sessionStorage.removeItem(key);
     } catch {
       /* The proposal remains available in this open panel. */
+    }
+  }, [messages, workspaceId]);
+  useEffect(() => {
+    if (!workspaceId) return;
+    try {
+      const key = `workspace-assistant-journal-${workspaceId}`;
+      const pending = messages
+        .filter((item) => item.result?.journalProposal && !item.journalSaved)
+        .map((item) => ({
+          id: item.id,
+          journalProposal: item.result!.journalProposal,
+        }));
+      if (pending.length) sessionStorage.setItem(key, JSON.stringify(pending));
+      else sessionStorage.removeItem(key);
+    } catch {
+      /* The journal preview remains in the open panel. */
     }
   }, [messages, workspaceId]);
   useEffect(() => {
@@ -383,28 +449,37 @@ export default function AssistantPanel({
       finish();
     }
   }
-  async function act(message: Message, action: "apply" | "undo" | "calendar") {
+  async function act(
+    message: Message,
+    action: "apply" | "undo" | "calendar" | "journal",
+  ) {
     const abort = begin();
     if (!abort || !message.result) return;
     const result = message.result;
     const timeout = setTimeout(() => abort.abort(), 45000);
     try {
       const response = await fetch(
-        action === "calendar" ? "/api/calendar" : "/api/commands",
+        action === "journal"
+          ? "/api/journal"
+          : action === "calendar"
+            ? "/api/calendar"
+            : "/api/commands",
         {
           method: "POST",
           headers,
           signal: abort.signal,
           body: JSON.stringify(
-            action === "calendar"
-              ? {
-                  action: "apply",
-                  proposal: result.calendarProposal?.proposal,
-                  confirmed: true,
-                }
-              : action === "apply"
-                ? { action, proposal: result.proposal }
-                : { action, commandId: result.receipt?.commandId },
+            action === "journal"
+              ? { action: "save", entry: result.journalProposal }
+              : action === "calendar"
+                ? {
+                    action: "apply",
+                    proposal: result.calendarProposal?.proposal,
+                    confirmed: true,
+                  }
+                : action === "apply"
+                  ? { action, proposal: result.proposal }
+                  : { action, commandId: result.receipt?.commandId },
           ),
         },
       );
@@ -427,6 +502,7 @@ export default function AssistantPanel({
             ? {
                 ...item,
                 calendarSaved: action === "calendar" || item.calendarSaved,
+                journalSaved: action === "journal" || item.journalSaved,
                 result: {
                   ...item.result!,
                   ...(data.receipt ? { receipt: data.receipt } : {}),
@@ -467,8 +543,8 @@ export default function AssistantPanel({
             className={styles.robot}
           />
           <div>
-            <strong>What would you like to get done?</strong>
-            <p>Tasks, notes, and your calendar. Type or talk.</p>
+            <strong>How can I help?</strong>
+            <p>Manage tasks, journal entries, and calendar events.</p>
           </div>
         </div>
         {context && (
@@ -502,23 +578,27 @@ export default function AssistantPanel({
           aria-label="Assistant conversation"
           aria-live="polite"
         >
-          {messages.length === 0 && (
-            <div className={styles.examples}>
-              {[
-                "Add a task to review my plans tomorrow",
-                "What meetings do I have this week?",
-                "Find a free hour tomorrow",
-              ].map((prompt) => (
-                <button
-                  key={prompt}
-                  disabled={busy}
-                  onClick={() => setText(prompt)}
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
-          )}
+          {messages.length === 0 &&
+            !text.trim() &&
+            !voice.requesting &&
+            !voice.listening &&
+            !voice.processing && (
+              <div className={styles.examples}>
+                {[
+                  "Add a task to review my plans tomorrow",
+                  "What meetings do I have this week?",
+                  "Write my journal for today: ",
+                ].map((prompt) => (
+                  <button
+                    key={prompt}
+                    disabled={busy}
+                    onClick={() => setText(prompt)}
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            )}
           {messages.map((message) => (
             <article
               key={message.id}
@@ -583,6 +663,65 @@ export default function AssistantPanel({
                   )}
                 </section>
               )}
+              {message.result?.journalProposal && (
+                <section className={styles.card}>
+                  <strong>
+                    {message.journalSaved
+                      ? "Saved to your journal"
+                      : "Review your journal entry"}
+                  </strong>
+                  <p>
+                    {message.result.journalProposal.localDate} /{" "}
+                    {message.result.journalProposal.timezone}
+                  </p>
+                  <p
+                    style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+                  >
+                    {message.result.journalProposal.content}
+                  </p>
+                  {message.journalSaved ? (
+                    <a href="#journal" onClick={onClose}>
+                      Open Journal
+                    </a>
+                  ) : (
+                    <>
+                      <p className={styles.hint}>
+                        This includes any previously saved text for this day.
+                        Saving keeps earlier revisions.
+                      </p>
+                      <button
+                        className="primary"
+                        disabled={busy}
+                        onClick={() => void act(message, "journal")}
+                      >
+                        Save journal entry
+                      </button>
+                      <button
+                        className="text-button"
+                        disabled={busy}
+                        onClick={() =>
+                          setMessages((all) =>
+                            all.map((item) =>
+                              item.id === message.id
+                                ? {
+                                    ...item,
+                                    text: "Journal preview discarded.",
+                                    result: {
+                                      ...item.result!,
+                                      journalProposal: undefined,
+                                    },
+                                  }
+                                : item,
+                            ),
+                          )
+                        }
+                      >
+                        Discard journal preview
+                      </button>
+                    </>
+                  )}
+                </section>
+              )}
               {message.result?.calendarProposal && (
                 <section className={styles.card}>
                   <strong>
@@ -637,11 +776,22 @@ export default function AssistantPanel({
                       <button
                         className="text-button"
                         disabled={busy}
-                        onClick={() => setMessages((all) => all.map((item) => item.id === message.id ? {
-                          ...item,
-                          text: "Calendar preview discarded.",
-                          result: { ...item.result!, calendarProposal: undefined },
-                        } : item))}
+                        onClick={() =>
+                          setMessages((all) =>
+                            all.map((item) =>
+                              item.id === message.id
+                                ? {
+                                    ...item,
+                                    text: "Calendar preview discarded.",
+                                    result: {
+                                      ...item.result!,
+                                      calendarProposal: undefined,
+                                    },
+                                  }
+                                : item,
+                            ),
+                          )
+                        }
                       >
                         Discard preview
                       </button>

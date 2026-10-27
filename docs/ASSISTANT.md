@@ -1,13 +1,17 @@
 # Workspace assistant
 
-Open **Ask assistant**, click the robot companion, or use the assistant icon beside
-an existing task. Type a request or use the microphone in a browser that supports
-audio recording. The transcript is editable and is never submitted automatically.
+Click the side companion to open the assistant. If it is hidden, use **Assistant**
+in the header. Type a request or use the microphone in a browser that supports
+audio recording. The transcript is editable and is never submitted automatically. Recording shows a
+pulsing indicator, elapsed time and a live microphone level meter. Waiting for
+permission and transcribing have separate states. Cancelling while recording discards the clip without uploading it. Cancelling
+transcription attempts to stop the request; it cannot retract audio already sent. Metering is best effort; if it is unavailable the
+recording indicator and timer remain visible. Reduced motion disables looping
+animations.
 Optional spoken replies use the browser's speech synthesis and start disabled.
 
-The assistant can create and edit tasks, notes and local meetings, read a calendar
-agenda, find free time, and prepare Google Calendar events. Selected-task context
-lets requests such as "mark this task done" identify the right record. Task due
+The assistant can prepare personal daily journal entries, create and edit tasks, notes and local meetings, read a calendar
+agenda, find free time, and prepare Google Calendar events. Name the task you want to change so the assistant can identify the right record. Task due
 dates are date-only; timed work belongs in a calendar event. Ambiguous targets or
 times should produce a clarification instead of a save.
 
@@ -15,6 +19,9 @@ A single personal change saves automatically when the visible option is enabled.
 Turn it off to review every change. Multiple changes always require review. Calendar
 writes always show an event preview before confirmation, including any attendees.
 Manual forms and assistant calendar requests share the same server validation.
+Journal requests also always require review. New text is appended to the day's saved
+entry by the server, and revision checks prevent overwriting a concurrent edit.
+See [Journal](JOURNAL.md) for dictation, drafts, revisions and agent publishing.
 
 Undo uses the existing command ledger and revision checks. Later edits can prevent
 an older command from being undone. Google Calendar writes do not offer local Undo;

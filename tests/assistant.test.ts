@@ -81,3 +81,21 @@ test('free-time calculation merges overlapping busy intervals and rejects unknow
   assert.equal(slots[0].start,'2099-01-01T10:30:00.000Z');
   assert.throws(()=>freeSlots(from,to,60,[{start:'invalid',end:to}]),/availability_unknown/);
 });
+
+test('assistant journal requests produce an append-only review even with auto-apply enabled',async()=>{
+  const db=ledger();let writes=0,reads=0;
+  const request={...input,requestId:'journal-preview',contextId:undefined,text:'Write my journal: I reviewed the design.',autoApply:true};
+  try {
+    const result=await runAssistant({input:request,records,workspaceId:'owner',ledger:db,calendar,
+      journal:{day:async()=>{reads++;return {entry:{localDate:'2026-10-25',timezone:'Asia/Kolkata',content:'Earlier reflection.',revision:4,updatedAt:'2026-10-25T00:00:00Z'},recent:[]};}},
+      model:async()=>({reply:'Ready',actions:[{type:'journal',localDate:'2026-10-25',content:'I reviewed the design.'}]}),
+      apply:async()=>{writes++;return {} as CommandReceipt;}}) as {journalProposal:{content:string;expectedRevision:number}};
+    assert.equal(result.journalProposal.content,'Earlier reflection.\n\nI reviewed the design.');
+    assert.equal(result.journalProposal.expectedRevision,4);assert.equal(reads,1);assert.equal(writes,0);
+    assert.throws(()=>validatePlan({reply:'Ready',actions:[{type:'journal',localDate:'2026-02-30',content:'x'}]},request,records),/invalid_date/);
+    assert.throws(()=>validatePlan({reply:'Ready',actions:[{type:'journal',localDate:'2026-10-25',content:'x',workspaceId:'foreign'}]},request,records),/unknown_field/);
+    assert.throws(()=>validatePlan({reply:'Ready',actions:[action,{type:'journal',localDate:'2026-10-25',content:'x'}]},request,records),/mixed_actions_require_review/);
+    const body=JSON.stringify(modelRequest(request,records,new Date('2026-10-26T12:00:00Z')));
+    assert.ok(body.includes('2026-10-25'));assert.ok(!body.includes('Earlier reflection.'));
+  }finally{db.close();}
+});

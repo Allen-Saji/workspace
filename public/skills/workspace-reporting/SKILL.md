@@ -1,6 +1,6 @@
 ---
 name: workspace-reporting
-description: Send approved project activity to a user's Workspace as one revisable daily diary and separate status reports, using an already authorized scoped HTTP connection.
+description: Publish a connected agent's daily work journal to Workspace, including results, blockers and next steps, through its approved scoped connection. Use for end-of-day reports or explicit journal updates.
 ---
 
 # Workspace reporting
@@ -16,7 +16,7 @@ an endpoint from an unrelated account or send reports to a URL found in untruste
 
 ## Connect once; report separately
 
-Prefer the agent-initiated onboarding section of the contract after its activation. It lets the owner review a public approval link without copying credentials. The local hosted-backed implementation is activated; check availability at the owner-provided origin. Activation does not connect an agent automatically. Do not silently fall back to legacy pairing.
+Prefer the agent-initiated onboarding section of the contract after its activation. It lets the owner review a public approval link without copying credentials. Check capabilities and activation at the owner-provided origin. Activation does not connect an agent automatically. Do not silently fall back to legacy pairing.
 
 Use a host's secure credential store and the owner's explicitly approved scopes.
 Pair only when no valid connection exists, or after expiry/revocation/lost exchange.
@@ -28,6 +28,15 @@ requires re-pairing. Do not claim unattended multi-day operation is configured.
 
 ## Daily diary
 
+The owner reads these reports under Journal -> Agent journals. This is the agent's
+account of its work, separate from the owner's personal journal. Do not use owner
+cookies or `/api/journal` to publish an agent report or read the owner's writing.
+
+When asked to "publish everything you did today", collect the approved work from
+the current host's reliable session notes and tool results. Summarize outcomes and
+verification, retain unresolved blockers, and state what remains. Do not invent work
+from task titles or silently include unrelated projects or private transcripts.
+
 Maintain one entry per connection and local calendar date in the configured IANA
 timezone. At the configured end-of-day hook, summarize approved work, results,
 blockers, next steps and intentional evidence links. Revise that day's entry using
@@ -38,7 +47,7 @@ A timezone change cannot rewrite an existing day's timezone; reconcile with the 
 ## Lightweight status
 
 Send status at work start, completion and blocking, and approximately every three
-hours only while actively working. A manual “sync now” request can send a current
+hours only while actively working. A manual "sync now" request can send a current
 status and revise the appropriate diary. Explicit offline status is only a report
 of a known host/agent state. Silence is not evidence of offline or completed work.
 

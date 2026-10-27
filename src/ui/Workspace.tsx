@@ -14,12 +14,13 @@ import Companion from "./Companion";
 import AssistantPanel from "./AssistantPanel";
 import CalendarPanel from "./CalendarPanel";
 import FocusPanel from "./FocusPanel";
+import JournalPanel from "./JournalPanel";
 import Brand from "./Brand";
 import RobotSprite from "./RobotSprite";
 import ArcadeProgress from "./ArcadeProgress";
 import { reactionForSave, type PetReaction } from "./companion-state";
 import { Badge, Icon, Modal, readable as s, stamp } from "./primitives";
-type View = "today" | "focus" | "calendar" | "learning" | "agents" | "context";
+type View = "today" | "focus" | "journal" | "calendar" | "learning" | "agents" | "context";
 type Snapshot = {
   workspaceId: string;
   storageMode: "sqlite" | "supabase";
@@ -28,10 +29,11 @@ type Snapshot = {
   lastReported: string | null;
   freshness: string;
 };
-const views: View[] = ["today", "focus", "calendar", "learning", "agents", "context"];
+const views: View[] = ["today", "focus", "journal", "calendar", "learning", "agents", "context"];
 const labels = {
   today: "Today",
   focus: "Focus",
+  journal: "Journal",
   calendar: "Calendar",
   learning: "Learning",
   agents: "Agents",
@@ -40,6 +42,7 @@ const labels = {
 const descriptions = {
   today: "Tasks, meetings, and notes.",
   focus: "A Pomodoro timer for your tasks.",
+  journal: "Personal entries and daily agent reports.",
   calendar: "Your meetings and available time.",
   learning: "Track what you are learning.",
   agents: "Reports and connected agents.",
@@ -133,6 +136,7 @@ export default function Workspace() {
   const [query, setQuery] = useState("");
   const [assistant, setAssistant] = useState<{contextId?: string; prompt?: string} | null>(null);
   const [focusMode, setFocusMode] = useState(false);
+  const [journalRefreshKey, setJournalRefreshKey] = useState(0);
   const changeFocusMode = useCallback((value: boolean) => {
     setFocusMode(value);
     if (value) setAssistant(null);
@@ -148,6 +152,7 @@ export default function Workspace() {
         await fetch("/api/workspace", { cache: "no-store" }),
       );
       setSnapshot(data);
+      setJournalRefreshKey(value => value + 1);
       setError("");
     } catch (e) {
       setSnapshot(null);
@@ -262,7 +267,7 @@ export default function Workspace() {
     }
   }
   return (
-    <div className={`shell ${view === "focus" ? "focus-view" : ""} ${view === "focus" && focusMode ? "focus-mode" : ""}`}>
+    <div className={`shell ${view === "focus" ? "focus-view" : ""} ${view === "journal" ? "journal-view" : ""} ${view === "focus" && focusMode ? "focus-mode" : ""}`}>
       <a href="#main" className="skip">
         Skip to content
       </a>
@@ -337,6 +342,7 @@ export default function Workspace() {
           {notice ? <p className="save-notice">{notice}</p> : null}
         </div>
         {snapshot ? <FocusPanel key={snapshot.workspaceId} workspaceId={snapshot.workspaceId} tasks={tasks} visible={view === "focus"} immersive={view === "focus" && focusMode} onImmersive={changeFocusMode} /> : null}
+        {view === "journal" && snapshot ? <JournalPanel workspaceId={snapshot.workspaceId} refreshKey={journalRefreshKey} /> : null}
         {view === "calendar" && snapshot ? <CalendarPanel key={snapshot.workspaceId} workspaceId={snapshot.workspaceId} onChanged={refresh} onAsk={(prompt) => setAssistant({prompt})} /> : null}
         {view === "today" && snapshot && !records.length && !reports.length ? (
           <section className="welcome-panel">

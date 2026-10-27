@@ -387,10 +387,10 @@ dialog {
   margin-left: 0;
   padding: 24px clamp(16px, 4vw, 64px) 48px;
 }
-.focus-view .page-header {
+.focus-view .page-header, .journal-view .page-header {
   min-height: auto;
   margin-block: 28px;
 }
-.focus-view .page-header:before {
+.focus-view .page-header:before, .journal-view .page-header:before {
   display: none;
 }
