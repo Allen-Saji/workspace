@@ -34,6 +34,9 @@
   overscroll-behavior: contain;
   padding: 2px;
 }
+.messages:empty {
+  display: none;
+}
 .message {
   max-width: 94%;
   padding: 13px 15px;
@@ -175,17 +178,146 @@
   }
 }
 @media (max-width: 480px) {
-  .panel { gap: 10px; }
-  .intro { align-items: center; }
-  .intro strong { font-size: 15px; line-height: 1.3; }
-  .intro p { display: none; }
-  .robot { width: 36px; height: 36px; flex-basis: 36px; }
-  .context { padding: 6px 9px; font-size: 12px; }
-  .messages { max-height: 25dvh; gap: 9px; }
-  .message { padding: 9px 11px; font-size: 14px; }
-  .card { padding: 9px; }
-  .composer { gap: 8px; }
-  .composer textarea { min-height: 70px; }
-  .options { gap: 5px; font-size: 11px; }
-  .hint { font-size: 11px; }
+  .panel {
+    gap: 10px;
+  }
+  .intro {
+    align-items: center;
+  }
+  .intro strong {
+    font-size: 15px;
+    line-height: 1.3;
+  }
+  .intro p {
+    display: none;
+  }
+  .robot {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+  .context {
+    padding: 6px 9px;
+    font-size: 12px;
+  }
+  .messages {
+    max-height: 25dvh;
+    gap: 9px;
+  }
+  .message {
+    padding: 9px 11px;
+    font-size: 14px;
+  }
+  .card {
+    padding: 9px;
+  }
+  .composer {
+    gap: 8px;
+  }
+  .composer textarea {
+    min-height: 70px;
+  }
+  .options {
+    gap: 5px;
+    font-size: 13px;
+  }
+  .options label {
+    min-height: 44px;
+  }
+  .hint {
+    font-size: 12px;
+  }
+}
+.voiceStatus {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f7f5fc;
+  padding: 12px 14px;
+}
+.recording {
+  border-color: #edbdc3;
+  background: #fff7f7;
+}
+.voiceSummary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  color: #5d4c6b;
+}
+.recording .voiceSummary {
+  color: #9e293d;
+}
+.voiceSummary time {
+  margin-left: auto;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.recordingDot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #ba354c;
+  animation: recordPulse 1.5s ease-in-out infinite;
+}
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #d8cee9;
+  border-top-color: #7251ab;
+  border-radius: 50%;
+  animation: voiceSpin 0.8s linear infinite;
+}
+.waveform {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+.waveform span {
+  flex: 0 1 4px;
+  min-height: 4px;
+  background: #b44459;
+  border-radius: 3px;
+  transition: height 80ms linear;
+}
+.voiceStatus p {
+  margin: 7px 0 0;
+  color: #706477;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.privacy {
+  font-size: 12px;
+  color: #625779;
+}
+.privacy summary {
+  cursor: pointer;
+  padding: 5px 0;
+}
+.privacy p {
+  margin-top: 8px;
+}
+@keyframes recordPulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+@keyframes voiceSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .recordingDot,
+  .spinner {
+    animation: none;
+  }
+  .waveform span {
+    transition: none;
+  }
 }

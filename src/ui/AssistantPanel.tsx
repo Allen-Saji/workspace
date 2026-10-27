@@ -317,6 +317,7 @@ export default function AssistantPanel({
     }
   }
   async function send(body?: RequestBody) {
+    if (voice.requesting || voice.listening || voice.processing) return;
     if (!body && (!text.trim() || retry || !status?.available)) return;
     const abort = begin();
     if (!abort) return;
@@ -732,16 +733,20 @@ export default function AssistantPanel({
           }}
         >
           <label htmlFor="assistant-request" className={styles.hint}>
-            {voice.listening
-              ? "Recording, up to one minute. Stop to transcribe."
-              : voice.processing ? "Transcribing your recording..." : "Your request"}
+            Your request
           </label>
           <textarea
             id="assistant-request"
             value={text}
             maxLength={4000}
             rows={3}
-            disabled={busy || !!retry}
+            disabled={
+              busy ||
+              !!retry ||
+              voice.requesting ||
+              voice.listening ||
+              voice.processing
+            }
             placeholder="Tell me what you want to do..."
             onChange={(event) => setText(event.target.value)}
             onKeyDown={(event) => {
@@ -751,15 +756,70 @@ export default function AssistantPanel({
                 !event.nativeEvent.isComposing
               ) {
                 event.preventDefault();
-                if (!voice.listening && !voice.processing) void send();
+                if (!voice.listening && !voice.processing && !voice.requesting)
+                  void send();
               }
             }}
           />
+          {(voice.requesting || voice.listening || voice.processing) && (
+            <div
+              className={`${styles.voiceStatus} ${voice.listening ? styles.recording : ""}`}
+            >
+              <div className={styles.voiceSummary} role="status">
+                <span
+                  className={
+                    voice.listening ? styles.recordingDot : styles.spinner
+                  }
+                  aria-hidden="true"
+                />
+                <strong>
+                  {voice.requesting
+                    ? "Waiting for microphone"
+                    : voice.listening
+                      ? "Recording"
+                      : "Transcribing..."}
+                </strong>
+                {voice.listening && (
+                  <time aria-hidden="true">
+                    00:{String(voice.elapsedSeconds).padStart(2, "0")} / 01:00
+                  </time>
+                )}
+              </div>
+              {voice.listening && (
+                <>
+                  <div className={styles.waveform} aria-hidden="true">
+                    {Array.from({ length: 25 }, (_, index) => (
+                      <span
+                        key={index}
+                        style={{
+                          height: `${4 + voice.level * (12 + 20 * Math.sin((index + 1) * 1.7) ** 2)}px`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <p>Microphone on. Stop recording to transcribe.</p>
+                </>
+              )}
+              {voice.requesting && (
+                <p>Allow microphone access in your browser to continue.</p>
+              )}
+              {voice.processing && (
+                <p>Microphone off. Your transcript will appear above.</p>
+              )}
+            </div>
+          )}
           <div className={styles.toolbar}>
             <button
               type="button"
               className={`secondary ${voice.listening ? styles.listening : ""}`}
-              disabled={!voice.supported || voice.processing || busy || !!retry || !status?.available}
+              disabled={
+                !voice.supported ||
+                voice.processing ||
+                voice.requesting ||
+                busy ||
+                !!retry ||
+                !status?.available
+              }
               aria-pressed={voice.listening}
               onClick={() => {
                 if (voice.listening) voice.stop();
@@ -769,22 +829,39 @@ export default function AssistantPanel({
                 }
               }}
             >
-              {voice.listening ? "Stop listening" : "Use microphone"}
+              {voice.listening ? "Stop recording" : "Use microphone"}
             </button>
-            <button
-              type="submit"
-              className="primary"
-              disabled={
-                busy ||
-                voice.listening ||
-                voice.processing ||
-                !!retry ||
-                !text.trim() ||
-                !status?.available
-              }
-            >
-              {busy ? "Working..." : "Send request"}
-            </button>
+            {(voice.requesting || voice.listening || voice.processing) && (
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => voice.cancel()}
+              >
+                Cancel{" "}
+                {voice.listening
+                  ? "recording"
+                  : voice.processing
+                    ? "transcription"
+                    : "microphone"}
+              </button>
+            )}
+            {!voice.requesting && !voice.listening && !voice.processing && (
+              <button
+                type="submit"
+                className="primary"
+                disabled={
+                  busy ||
+                  voice.listening ||
+                  voice.requesting ||
+                  voice.processing ||
+                  !!retry ||
+                  !text.trim() ||
+                  !status?.available
+                }
+              >
+                {busy ? "Working..." : "Send request"}
+              </button>
+            )}
           </div>
           <div className={styles.options}>
             <label>
@@ -794,7 +871,7 @@ export default function AssistantPanel({
                 disabled={busy}
                 onChange={(event) => setAutoApply(event.target.checked)}
               />
-              Save single personal changes automatically
+              Auto-save single task, note, or meeting changes
             </label>
             {speechSupported && (
               <label>
@@ -812,14 +889,22 @@ export default function AssistantPanel({
           </div>
           <p className={styles.hint}>
             {voice.supported
-              ? "Voice recordings go to OpenAI for transcription, then are discarded by Workspace. Edit the text before sending. Each recording reserves $0.05 from the daily AI budget."
-              : "Voice input is unavailable in this browser. Type your request above."}{" "}
-            Requests and relevant context go to OpenAI. Calendar changes need confirmation.
+              ? "Audio is sent to OpenAI when you stop recording. Review the transcript before sending."
+              : "Voice input is unavailable in this browser. You can type your request."}
           </p>
+          <details className={styles.privacy}>
+            <summary>Privacy and AI usage</summary>
+            <p className={styles.hint}>
+              Requests and relevant context go to OpenAI. Workspace discards
+              recordings after transcription. Each recording reserves $0.05 from
+              the daily AI budget. Journal and calendar changes require
+              confirmation.
+            </p>
+          </details>
           {status?.budget && (
             <p className={styles.hint}>
-              Reserved today: ${status.budget.usedUsd.toFixed(3)} of $
-              {status.budget.limitUsd.toFixed(2)}. Times use Asia/Kolkata.
+              Reserved today (UTC): ${status.budget.usedUsd.toFixed(3)} of $
+              {status.budget.limitUsd.toFixed(2)}.
             </p>
           )}
         </form>
