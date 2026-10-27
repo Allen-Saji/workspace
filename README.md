@@ -7,6 +7,7 @@ agent reports into one personal workspace, with a small animated robot companion
 
 - Create and update tasks, notes and manually entered meetings.
 - Track learning steps, with an evidence note for completed work.
+- Focus with a Pomodoro timer, optional task linking, breaks and a distraction-free view.
 - Review text-based command proposals before saving, and undo eligible commands.
 - Import reports and review captured context with its source and acceptance state.
 - Manage scoped agent connections and read agent-supplied reports and diary entries
@@ -72,6 +73,7 @@ stay excluded. The web app manifest launches `/app`; it does not imply offline s
 
 - [Assistant and voice](docs/ASSISTANT.md)
 - [Google Calendar and imports](docs/CALENDAR.md)
+- [Focus timer](docs/FOCUS.md)
 - [Commands and undo](docs/COMMANDS.md)
 - [Interpretation formats](docs/INTERPRETATION.md)
 - [Hosted agent connections](docs/HOSTED-CONNECTIONS.md)

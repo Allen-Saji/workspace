@@ -13,12 +13,13 @@ import ReportImport from "./ReportImport";
 import Companion from "./Companion";
 import AssistantPanel from "./AssistantPanel";
 import CalendarPanel from "./CalendarPanel";
+import FocusPanel from "./FocusPanel";
 import Brand from "./Brand";
 import RobotSprite from "./RobotSprite";
 import ArcadeProgress from "./ArcadeProgress";
 import { reactionForSave, type PetReaction } from "./companion-state";
 import { Badge, Icon, Modal, readable as s, stamp } from "./primitives";
-type View = "today" | "calendar" | "learning" | "agents" | "context";
+type View = "today" | "focus" | "calendar" | "learning" | "agents" | "context";
 type Snapshot = {
   workspaceId: string;
   storageMode: "sqlite" | "supabase";
@@ -27,9 +28,10 @@ type Snapshot = {
   lastReported: string | null;
   freshness: string;
 };
-const views: View[] = ["today", "calendar", "learning", "agents", "context"];
+const views: View[] = ["today", "focus", "calendar", "learning", "agents", "context"];
 const labels = {
   today: "Today",
+  focus: "Focus",
   calendar: "Calendar",
   learning: "Learning",
   agents: "Agents",
@@ -37,6 +39,7 @@ const labels = {
 };
 const descriptions = {
   today: "Tasks, meetings, and notes.",
+  focus: "A Pomodoro timer for your tasks.",
   calendar: "Your meetings and available time.",
   learning: "Track what you are learning.",
   agents: "Reports and connected agents.",
@@ -129,6 +132,11 @@ export default function Workspace() {
     [working, setWorking] = useState(false);
   const [query, setQuery] = useState("");
   const [assistant, setAssistant] = useState<{contextId?: string; prompt?: string} | null>(null);
+  const [focusMode, setFocusMode] = useState(false);
+  const changeFocusMode = useCallback((value: boolean) => {
+    setFocusMode(value);
+    if (value) setAssistant(null);
+  }, []);
   const [assistantBusy, setAssistantBusy] = useState(false);
   const [petReaction, setPetReaction] = useState<PetReaction | null>(null);
   const [pendingSaves, setPendingSaves] = useState(0);
@@ -163,6 +171,7 @@ export default function Workspace() {
       setImporting(false);
       setCommandOpen(false);
       setHistoryOpen(false);
+      setFocusMode(false);
     };
     window.addEventListener("hashchange", change);
     return () => {
@@ -253,7 +262,7 @@ export default function Workspace() {
     }
   }
   return (
-    <div className="shell">
+    <div className={`shell ${view === "focus" ? "focus-view" : ""} ${view === "focus" && focusMode ? "focus-mode" : ""}`}>
       <a href="#main" className="skip">
         Skip to content
       </a>
@@ -327,6 +336,7 @@ export default function Workspace() {
         <div role="status">
           {notice ? <p className="save-notice">{notice}</p> : null}
         </div>
+        {snapshot ? <FocusPanel key={snapshot.workspaceId} workspaceId={snapshot.workspaceId} tasks={tasks} visible={view === "focus"} immersive={view === "focus" && focusMode} onImmersive={changeFocusMode} /> : null}
         {view === "calendar" && snapshot ? <CalendarPanel key={snapshot.workspaceId} workspaceId={snapshot.workspaceId} onChanged={refresh} onAsk={(prompt) => setAssistant({prompt})} /> : null}
         {view === "today" && snapshot && !records.length && !reports.length ? (
           <section className="welcome-panel">

@@ -375,3 +375,22 @@ dialog {
     padding: 20px;
   }
 }
+
+/* Focus mode keeps the timer in the page while removing surrounding distractions. */
+.focus-mode > .sidebar,
+.focus-mode .workspace-main > .topbar,
+.focus-mode .workspace-main > .page-header,
+.focus-mode .workspace-main > .workspace-footer {
+  display: none;
+}
+.focus-mode > .workspace-main {
+  margin-left: 0;
+  padding: 24px clamp(16px, 4vw, 64px) 48px;
+}
+.focus-view .page-header {
+  min-height: auto;
+  margin-block: 28px;
+}
+.focus-view .page-header:before {
+  display: none;
+}
