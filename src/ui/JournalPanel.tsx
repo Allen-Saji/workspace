@@ -10,6 +10,7 @@ import { personalWrite } from "../journal/personal";
 import { localDateAt } from "../journal/contracts";
 import { Modal, stamp } from "./primitives";
 import styles from "./JournalPanel.module.css";
+import { useWorkspaceReads } from "./WorkspaceReads";
 
 const noSubscription = () => () => {};
 const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -316,6 +317,7 @@ export default function JournalPanel({
   workspaceId: string;
   refreshKey: number;
 }) {
+  const { read, peek, invalidate } = useWorkspaceReads();
   const today = useSyncExternalStore(noSubscription, localDay, () => "");
   const zone = useSyncExternalStore(
     noSubscription,
@@ -328,8 +330,13 @@ export default function JournalPanel({
   const [loaded, setLoaded] = useState<{
     date: string;
     day: JournalDay;
-  } | null>(null);
-  const [agents, setAgents] = useState<AgentJournalView | null>(null);
+  } | null>(() => {
+    const day = peek<JournalDay>(`/api/journal?date=${date}`);
+    return day ? { date, day } : null;
+  });
+  const [agents, setAgents] = useState<AgentJournalView | null>(
+    () => peek<AgentJournalView>("/api/journal?view=agents") ?? null,
+  );
   const [error, setError] = useState(""),
     [history, setHistory] = useState<{
       date: string;
@@ -343,12 +350,10 @@ export default function JournalPanel({
     if (!date) return;
     const controller = new AbortController();
     Promise.all([
-      fetch(`/api/journal?date=${date}`, {
-        cache: "no-store",
+      read(`/api/journal?date=${date}`, {
         signal: controller.signal,
       }).then(json),
-      fetch("/api/journal?view=agents", {
-        cache: "no-store",
+      read("/api/journal?view=agents", {
         signal: controller.signal,
       }).then(json),
     ])
@@ -365,18 +370,17 @@ export default function JournalPanel({
           );
       });
     return () => controller.abort();
-  }, [date, refreshKey, reload]);
+  }, [date, refreshKey, reload, read]);
   async function refresh() {
     // Reload the active selection through the same abortable effect as navigation.
+    invalidate("/api/journal");
     setReload((value) => value + 1);
   }
   async function revisions() {
     const sequence = ++historySequence.current;
     try {
       const data = await json(
-        await fetch(`/api/journal?view=history&date=${date}`, {
-          cache: "no-store",
-        }),
+        await read(`/api/journal?view=history&date=${date}`),
       );
       if (sequence === historySequence.current)
         setHistory({ date, entries: data.entries });
@@ -424,6 +428,7 @@ export default function JournalPanel({
         <button
           className="text-button"
           onClick={() => {
+            invalidate("/api/journal");
             setSelected(null);
             setReload((value) => value + 1);
           }}
@@ -434,10 +439,7 @@ export default function JournalPanel({
       {error ? (
         <div role="alert" className="error">
           {error}{" "}
-          <button
-            className="text-button"
-            onClick={() => setReload((value) => value + 1)}
-          >
+          <button className="text-button" onClick={() => void refresh()}>
             Retry journal
           </button>
         </div>

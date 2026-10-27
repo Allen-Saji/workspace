@@ -21,7 +21,8 @@ connection access, not proof that an agent is running. Status and work summaries
 are agent-reported; old status updates are marked out of date. Views show the
 records returned by the existing bounded history endpoints.
 
-Use **Refresh agents** to reload profiles and reports. If a partial refresh fails,
+Section revisits reuse successful reads for one minute. Use **Refresh agents** to
+reload profiles and reports immediately. If a partial refresh fails,
 the page displays an error and retains previously loaded connection information.
 
 **Manage connections** contains pairing, approval, revocation, and manual JSON

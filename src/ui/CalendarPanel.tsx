@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Proposal, CommandReceipt } from "../domain/commands";
 import styles from "./CalendarPanel.module.css";
+import { useWorkspaceReads } from "./WorkspaceReads";
 
 type Calendar = {
   id: string;
@@ -150,11 +151,22 @@ export default function CalendarPanel({
   workspaceId?: string;
   onChanged: () => Promise<void> | void;
 }) {
+  const { read, peek, invalidate } = useWorkspaceReads();
   const [recovery] = useState(() => recover(workspaceId));
-  const [status, setStatus] = useState<Status | null>(null);
-  const [calendars, setCalendars] = useState<Calendar[]>([]);
+  const [status, setStatus] = useState<Status | null>(
+    () => peek<Status>("/api/calendar?action=status") ?? null,
+  );
+  const [calendars, setCalendars] = useState<Calendar[]>(
+    () =>
+      peek<{ calendars: Calendar[] }>("/api/calendar?action=calendars")
+        ?.calendars ?? [],
+  );
   const [calendarId, setCalendarId] = useState(
-    recovery?.preview.event.calendarId ?? "",
+    recovery?.preview.event.calendarId ??
+      calendars.find((item) => item.primary)?.id ??
+      calendars.find((item) => item.accessRole === "owner")?.id ??
+      calendars[0]?.id ??
+      "",
   );
   const [eventResult, setEventResult] = useState<{
     key: string;
@@ -168,7 +180,7 @@ export default function CalendarPanel({
     localTime(new Date(Date.now() + 7 * 86400000).toISOString()).slice(0, 10),
   );
   const [refresh, setRefresh] = useState(0);
-  const [loadedRevision, setLoadedRevision] = useState(-1);
+  const [loadedRevision, setLoadedRevision] = useState(() => (status ? 0 : -1));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -249,19 +261,19 @@ export default function CalendarPanel({
     const abort = new AbortController();
     async function load() {
       try {
-        const response = await fetch("/api/calendar?action=status", {
-          cache: "no-store",
+        const response = await read("/api/calendar?action=status", {
           signal: abort.signal,
         });
         const data = await response.json();
+        if (abort.signal.aborted) return;
         if (!response.ok) throw new Error(failure(data, response.status));
         setStatus(data);
         if (data.connected && !data.reconnectRequired) {
-          const result = await fetch("/api/calendar?action=calendars", {
-            cache: "no-store",
+          const result = await read("/api/calendar?action=calendars", {
             signal: abort.signal,
           });
           const list = await result.json();
+          if (abort.signal.aborted) return;
           if (!result.ok) {
             if (list.error?.code === "calendar_reconnect_required")
               setStatus({
@@ -296,7 +308,7 @@ export default function CalendarPanel({
     }
     void load();
     return () => abort.abort();
-  }, [refresh]);
+  }, [refresh, read]);
   useEffect(() => {
     if (!status?.connected || status.reconnectRequired || !calendarId) return;
     const abort = new AbortController();
@@ -307,12 +319,12 @@ export default function CalendarPanel({
       from: `${from}T00:00:00+05:30`,
       to: `${to}T00:00:00+05:30`,
     });
-    fetch(`/api/calendar?${params}`, {
-      cache: "no-store",
+    read(`/api/calendar?${params}`, {
       signal: abort.signal,
     })
       .then(async (response) => {
         const data = await response.json();
+        if (abort.signal.aborted) return;
         if (!response.ok) {
           if (data.error?.code === "calendar_reconnect_required")
             setStatus({
@@ -346,6 +358,7 @@ export default function CalendarPanel({
     refresh,
     rangeError,
     eventKey,
+    read,
   ]);
   useEffect(() => {
     if (hasDraft)
@@ -499,6 +512,7 @@ export default function CalendarPanel({
       setSaveAttempted(false);
       requestId.current = null;
       setNotice("Event saved to Google Calendar.");
+      invalidate("/api/calendar?");
       setRefresh((value) => value + 1);
       await changed();
     });
@@ -530,6 +544,7 @@ export default function CalendarPanel({
             disabled={busy || loading}
             onClick={() => {
               setError("");
+              invalidate("/api/calendar?");
               setRefresh((value) => value + 1);
             }}
           >
@@ -867,6 +882,7 @@ export default function CalendarPanel({
                       setNotice(
                         "Calendar disconnected. Your Google events are unchanged.",
                       );
+                      invalidate("/api/calendar?");
                       setRefresh((value) => value + 1);
                     })
                   }

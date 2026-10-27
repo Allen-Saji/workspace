@@ -6,6 +6,7 @@ import type { StoredReport } from "../storage/port";
 import CommandReview from "./CommandReview";
 import CommandHistory from "./CommandHistory";
 import AgentsPanel from "./AgentsPanel";
+import { WorkspaceReads } from "./WorkspaceReads";
 import { reportedState, useReportClock } from "./report-clock";
 import Editor, { type EditTarget } from "./Editor";
 import ReportImport from "./ReportImport";
@@ -270,7 +271,7 @@ export default function Workspace() {
       setWorking(false);
     }
   }
-  return (
+  const content = (
     <div
       className={`shell ${view === "focus" ? "focus-view" : ""} ${view === "journal" ? "journal-view" : ""} ${view === "focus" && focusMode ? "focus-mode" : ""}`}
     >
@@ -755,5 +756,13 @@ export default function Workspace() {
         </Modal>
       ) : null}
     </div>
+  );
+  return (
+    <WorkspaceReads
+      key={snapshot?.workspaceId ?? "loading"}
+      revision={journalRefreshKey}
+    >
+      {content}
+    </WorkspaceReads>
   );
 }

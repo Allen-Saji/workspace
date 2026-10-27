@@ -1,14 +1,25 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useWorkspaceReads } from "./WorkspaceReads";
 import type { ConnectionView } from "../connections/hosted";
 import { Modal, scopeLabel } from "./primitives";
 import { reportedState, useReportClock } from "./report-clock";
 export default function Connections({
   onChanged,
 }: { onChanged?: () => void } = {}) {
+  const { read: readCached, peek, invalidate } = useWorkspaceReads();
   const now = useReportClock();
-  const [mode, setMode] = useState("loading"),
-    [items, setItems] = useState<ConnectionView[]>([]),
+  const [mode, setMode] = useState(() => {
+      const cap = peek<{ enabled: boolean; mode: string }>(
+        "/api/agent/v1/capabilities",
+      );
+      return cap ? (cap.enabled ? cap.mode : "disabled") : "loading";
+    }),
+    [items, setItems] = useState<ConnectionView[]>(
+      () =>
+        peek<{ connections: ConnectionView[] }>("/api/agent/v1/control")
+          ?.connections ?? [],
+    ),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [code, setCode] = useState(""),
@@ -21,18 +32,17 @@ export default function Connections({
   const inFlight = useRef(false);
   const active = mode === "hosted" || mode === "ephemeral-test",
     test = mode === "ephemeral-test";
-  async function read() {
-    const r = await fetch("/api/agent/v1/control", { cache: "no-store" });
+  const read = useCallback(async () => {
+    const r = await readCached("/api/agent/v1/control");
     if (!r.ok)
       throw new Error(
         "Unable to load connections. Refresh before retrying any change.",
       );
     setItems((await r.json()).connections);
-  }
+  }, [readCached]);
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/agent/v1/capabilities", {
-      cache: "no-store",
+    readCached("/api/agent/v1/capabilities", {
       signal: controller.signal,
     })
       .then((r) => {
@@ -51,7 +61,7 @@ export default function Connections({
         }
       });
     return () => controller.abort();
-  }, []);
+  }, [read, readCached]);
   async function act(action: string, id?: string, scopes?: string[]) {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -76,6 +86,8 @@ export default function Connections({
         setCode(v.pairingCode);
         setExpires(v.expiresAt);
       }
+      invalidate("/api/agent/");
+      invalidate("/api/journal?view=agents");
       await read();
       onChanged?.();
     } catch (e) {
@@ -153,7 +165,9 @@ export default function Connections({
             disabled={busy}
             onClick={() => {
               setBusy(true);
+              invalidate("/api/agent/");
               read()
+                .then(() => onChanged?.())
                 .catch((e) => setError(e.message))
                 .finally(() => setBusy(false));
             }}

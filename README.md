@@ -21,6 +21,10 @@ private dashboard at `/app`. Signed-in visitors to `/` or `/login` go to `/app`.
 Fresh workspaces start empty and offer an action to add the first task. The landing
 page's populated product preview is clearly labeled example data.
 
+Journal, Calendar and Agents reuse successful reads for one minute while you switch
+sections. Saves and refresh controls invalidate the relevant data. This cache is
+kept in memory for the current workspace and clears on reload or sign-out.
+
 ## Local development
 
 Requires Node.js 24.22.1 or later.

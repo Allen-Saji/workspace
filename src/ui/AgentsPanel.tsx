@@ -9,6 +9,7 @@ import { agentProfiles, connectionState, latestWork } from "./agents/model";
 import { Icon, Modal, stamp } from "./primitives";
 import { useReportClock } from "./report-clock";
 import styles from "./AgentsPanel.module.css";
+import { useWorkspaceReads } from "./WorkspaceReads";
 
 type Directory = {
   connections: ConnectionView[];
@@ -16,22 +17,44 @@ type Directory = {
   names: Record<string, string>;
   enabled: boolean;
 };
+function cachedDirectory(
+  peek: ReturnType<typeof useWorkspaceReads>["peek"],
+): Directory | null {
+  const cap = peek<{ enabled: boolean }>("/api/agent/v1/capabilities");
+  if (!cap) return null;
+  const saved = peek<AgentJournalView>("/api/journal?view=agents");
+  const journal = peek<JournalSnapshot>("/api/agent/v2/journal");
+  return {
+    connections:
+      peek<{ connections: ConnectionView[] }>("/api/agent/v1/control")
+        ?.connections ?? [],
+    journal: {
+      diaries: journal?.diaries ?? saved?.diaries ?? [],
+      statuses: journal?.statuses ?? [],
+    },
+    names: saved?.names ?? {},
+    enabled: cap.enabled,
+  };
+}
 async function readJson(response: Response) {
   if (!response.ok) throw new Error("Agent information could not be loaded.");
   return response.json();
 }
-async function readDirectory(signal: AbortSignal) {
+async function readDirectory(
+  signal: AbortSignal,
+  read: ReturnType<typeof useWorkspaceReads>["read"],
+) {
   signal = AbortSignal.any([signal, AbortSignal.timeout(15000)]);
-  const capabilities = await fetch("/api/agent/v1/capabilities", {
+  const capabilities = await read("/api/agent/v1/capabilities", {
     signal,
   }).then(readJson);
   const [connections, saved, journal] = await Promise.allSettled([
     capabilities.enabled
-      ? fetch("/api/agent/v1/control", { signal }).then(readJson)
+      ? read("/api/agent/v1/control", { signal }).then(readJson)
       : Promise.resolve({ connections: [] }),
-    fetch("/api/journal?view=agents", { signal }).then(readJson),
+    read("/api/journal?view=agents", { signal }).then(readJson),
     capabilities.journalEnabled
-      ? fetch("/api/agent/v2/journal", { signal }).then(readJson)
+      ? read("/api/agent/v2/journal", { signal }).then(readJson)
       : Promise.resolve({ diaries: [], statuses: [] }),
   ]);
   if (signal.aborted) throw new DOMException("Aborted", "AbortError");
@@ -131,10 +154,15 @@ export default function AgentsPanel({
   onImportReport: () => void;
   onRefresh: () => Promise<void>;
 }) {
+  const { read, peek } = useWorkspaceReads();
   const now = useReportClock();
-  const [directory, setDirectory] = useState<Directory | null>(null);
+  const [directory, setDirectory] = useState<Directory | null>(() =>
+    cachedDirectory(peek),
+  );
   const [error, setError] = useState("");
-  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  const [loadedKey, setLoadedKey] = useState<string | null>(() =>
+    directory ? `${refreshKey}:0` : null,
+  );
   const [reload, setReload] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [tab, setTab] = useState<"overview" | "reports" | "journals">(
@@ -148,7 +176,7 @@ export default function AgentsPanel({
   const loading = loadedKey !== loadKey;
   useEffect(() => {
     const controller = new AbortController();
-    readDirectory(controller.signal)
+    readDirectory(controller.signal, read)
       .then(
         ({
           data,
@@ -186,7 +214,7 @@ export default function AgentsPanel({
         if (!controller.signal.aborted) setLoadedKey(loadKey);
       });
     return () => controller.abort();
-  }, [loadKey]);
+  }, [loadKey, read]);
   const agents = agentProfiles(
     directory?.connections ?? [],
     reports,
