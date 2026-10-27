@@ -19,14 +19,7 @@ import Brand from "./Brand";
 import ArcadeProgress from "./ArcadeProgress";
 import { reactionForSave, type PetReaction } from "./companion-state";
 import { Badge, Icon, Modal, readable as s, stamp } from "./primitives";
-type View =
-  | "today"
-  | "focus"
-  | "journal"
-  | "calendar"
-  | "learning"
-  | "agents"
-  | "context";
+type View = "today" | "focus" | "journal" | "calendar" | "learning" | "agents";
 type Snapshot = {
   workspaceId: string;
   storageMode: "sqlite" | "supabase";
@@ -42,7 +35,6 @@ const views: View[] = [
   "calendar",
   "learning",
   "agents",
-  "context",
 ];
 const labels = {
   today: "Today",
@@ -51,7 +43,6 @@ const labels = {
   calendar: "Calendar",
   learning: "Learning",
   agents: "Agents",
-  context: "Context",
 };
 const descriptions = {
   today: "Tasks, meetings, and notes.",
@@ -60,7 +51,6 @@ const descriptions = {
   calendar: "Your meetings and available time.",
   learning: "Track what you are learning.",
   agents: "Reports and connected agents.",
-  context: "Decisions and details worth keeping.",
 };
 function subscribeLocation(callback: () => void) {
   window.addEventListener("hashchange", callback);
@@ -145,9 +135,8 @@ export default function Workspace() {
     [notice, setNotice] = useState("");
   const [editing, setEditing] = useState<EditTarget | null>(null),
     [importing, setImporting] = useState(false),
-    [detail, setDetail] = useState<WorkspaceRecord | StoredReport | null>(null),
+    [detail, setDetail] = useState<StoredReport | null>(null),
     [working, setWorking] = useState(false);
-  const [query, setQuery] = useState("");
   const [assistant, setAssistant] = useState<{
     contextId?: string;
     prompt?: string;
@@ -247,8 +236,7 @@ export default function Workspace() {
     meetings = records
       .filter((r) => r.kind === "meeting")
       .sort((a, b) => s(a.data.start).localeCompare(s(b.data.start)));
-  const captures = records.filter((r) => r.kind === "capture"),
-    notes = records.filter((r) => r.kind === "note");
+  const notes = records.filter((r) => r.kind === "note");
   const completed = lessons.filter((r) => r.data.status === "completed").length;
   const latest = reports.find(
       (r) =>
@@ -612,81 +600,6 @@ export default function Workspace() {
                   </footer>
                 </section>
               ) : null}
-              {view === "today" || view === "context" ? (
-                <section className="panel context-panel">
-                  <div className="panel-heading">
-                    <h2>
-                      <Icon name="context" />
-                      Captured context
-                    </h2>
-                  </div>
-                  {view === "context" ? (
-                    <label className="search-label">
-                      Search captures
-                      <input
-                        type="search"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Search content"
-                      />
-                    </label>
-                  ) : null}
-                  {captures.length ? (
-                    <div className="capture-list">
-                      {captures
-                        .filter((c) =>
-                          s(c.data.content)
-                            .toLowerCase()
-                            .includes(query.toLowerCase()),
-                        )
-                        .map((c) => (
-                          <button
-                            className="capture-card"
-                            key={c.id}
-                            onClick={() => setDetail(c)}
-                          >
-                            <div className="capture-meta">
-                              <span>{s(c.data.type).replaceAll("_", " ")}</span>
-                              {c.data.isTest ? <Badge>Sample</Badge> : null}
-                            </div>
-                            <strong>{s(c.data.content)}</strong>
-                            {!c.data.userAccepted ? (
-                              <small>
-                                {["rejected", "archived"].includes(
-                                  s(c.data.disposition),
-                                )
-                                  ? s(c.data.disposition)
-                                  : "Needs review"}
-                              </small>
-                            ) : null}
-                          </button>
-                        ))}
-                      {!captures.some((c) =>
-                        s(c.data.content)
-                          .toLowerCase()
-                          .includes(query.toLowerCase()),
-                      ) ? (
-                        <p className="muted">No matching captures.</p>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <p className="empty-state">
-                      No captured context yet.
-                      <br />
-                      Import a report to save decisions and details.
-                    </p>
-                  )}
-                  <footer className="panel-footer">
-                    <span />
-                    <button
-                      className="text-button"
-                      onClick={() => setImporting(true)}
-                    >
-                      Import report
-                    </button>
-                  </footer>
-                </section>
-              ) : null}
             </div>
             {view === "today" &&
             meetings.some((m) => !dayMeetings.includes(m)) ? (
@@ -844,87 +757,35 @@ export default function Workspace() {
         />
       ) : null}
       {detail ? (
-        <Modal
-          title={"report" in detail ? "Report details" : "Captured context"}
-          onClose={() => setDetail(null)}
-        >
-          {"report" in detail ? (
-            <div className="detail">
-              {detail.report.isTest ? <Badge>Sample report</Badge> : null}
-              <p className="detail-summary">{detail.report.summary}</p>
+        <Modal title="Report details" onClose={() => setDetail(null)}>
+          <div className="detail">
+            {detail.report.isTest ? <Badge>Sample report</Badge> : null}
+            <p className="detail-summary">{detail.report.summary}</p>
+            <p className="muted">Reported {stamp(detail.report.occurredAt)}</p>
+            <details>
+              <summary>Source and receipt</summary>
+              <dl>
+                <dt>Saved</dt>
+                <dd>{stamp(detail.receipt.committedAt)}</dd>
+                <dt>Receipt</dt>
+                <dd>{detail.receipt.receiptId}</dd>
+                <dt>Connection</dt>
+                <dd>{detail.connectionId}</dd>
+                <dt>Event</dt>
+                <dd>{detail.report.eventId}</dd>
+                <dt>Source</dt>
+                <dd>
+                  {detail.report.source.conversationRef ?? "Not provided"}
+                </dd>
+                <dt>Payload digest</dt>
+                <dd>{detail.receipt.payloadDigest}</dd>
+              </dl>
               <p className="muted">
-                Reported {stamp(detail.report.occurredAt)}
+                This receipt confirms the report was saved here. Remote memory
+                and ongoing activity are not verified.
               </p>
-              <details>
-                <summary>Source and receipt</summary>
-                <dl>
-                  <dt>Saved</dt>
-                  <dd>{stamp(detail.receipt.committedAt)}</dd>
-                  <dt>Receipt</dt>
-                  <dd>{detail.receipt.receiptId}</dd>
-                  <dt>Connection</dt>
-                  <dd>{detail.connectionId}</dd>
-                  <dt>Event</dt>
-                  <dd>{detail.report.eventId}</dd>
-                  <dt>Source</dt>
-                  <dd>
-                    {detail.report.source.conversationRef ?? "Not provided"}
-                  </dd>
-                  <dt>Payload digest</dt>
-                  <dd>{detail.receipt.payloadDigest}</dd>
-                </dl>
-                <p className="muted">
-                  This receipt confirms the report was saved here. Remote memory
-                  and ongoing activity are not verified.
-                </p>
-              </details>
-            </div>
-          ) : (
-            <div className="detail">
-              <p className="detail-summary">{s(detail.data.content)}</p>
-              <p>
-                {detail.data.userAccepted
-                  ? "Accepted"
-                  : s(detail.data.disposition) || "Needs review"}
-              </p>
-              <details>
-                <summary>Source and history</summary>
-                <dl>
-                  <dt>Basis</dt>
-                  <dd>{s(detail.data.basis)}</dd>
-                  <dt>Source event</dt>
-                  <dd>{s(detail.data.eventId)}</dd>
-                  <dt>Reported</dt>
-                  <dd>{stamp(detail.data.occurredAt)}</dd>
-                  <dt>Updated</dt>
-                  <dd>{stamp(detail.updatedAt)}</dd>
-                  <dt>Source</dt>
-                  <dd>
-                    {s(
-                      (detail.data.source as Record<string, unknown>)
-                        ?.conversationRef,
-                    ) || "Not provided"}
-                  </dd>
-                  <dt>Revision</dt>
-                  <dd>{detail.revision}</dd>
-                </dl>
-                <p className="muted">
-                  Changes here are not synced to the assistant.
-                </p>
-              </details>
-              <footer className="form-actions">
-                <button
-                  className="primary"
-                  onClick={() => {
-                    setEditing({ kind: "capture", record: detail });
-                    setDetail(null);
-                  }}
-                >
-                  Review capture
-                </button>
-              </footer>
-            </div>
-          )}
+            </details>
+          </div>
         </Modal>
       ) : null}
     </div>

@@ -28,7 +28,9 @@ export default function GoogleLogin({
             Google sign-in is not configured for this environment.
           </div>
         )}
-        <GoogleSignInButton available={available} />
+        <div className="auth-signin">
+          <GoogleSignInButton available={available} />
+        </div>
         {localDevelopment ? (
           <Link href="/app" className="local-workspace-link">
             Open local workspace
@@ -38,13 +40,6 @@ export default function GoogleLogin({
           Only your basic profile and email are requested. Gmail, Drive, and
           Calendar are not connected.
         </p>
-        <details>
-          <summary>About your data</summary>
-          <p>
-            Local development data stays on this computer and is not imported
-            when you sign in.
-          </p>
-        </details>
         <Link href="/privacy">Privacy and your data</Link>
       </div>
     </main>

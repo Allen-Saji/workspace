@@ -419,10 +419,6 @@ export default function FocusPanel({
                 <span>focused</span>
               </div>
             </div>
-            <p className={styles.small}>
-              Completed focus intervals. Saved in this browser for this
-              workspace.
-            </p>
           </section>
           <details className={styles.preferences}>
             <summary>Timer preferences</summary>

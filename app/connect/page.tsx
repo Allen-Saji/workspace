@@ -68,18 +68,22 @@ export default function DeviceApproval() {
           grant access.
         </p>
         <div className="auth-links">
-          <Link href="/login">Sign in</Link>
-          <Link href="/app#agents">Back to Agents</Link>
+          <Link href="/login" className="secondary">
+            Sign in
+          </Link>
+          <Link href="/app#agents" className="secondary">
+            Back to Agents
+          </Link>
         </div>
-        <p>
+        <div className="auth-actions">
           <button
-            className="secondary"
+            className="primary"
             disabled={busy}
             onClick={() => void act("inspect")}
           >
             Review request
           </button>
-        </p>
+        </div>
         {view && (
           <section>
             <h2>{view.displayName}</h2>
@@ -106,7 +110,7 @@ export default function DeviceApproval() {
                 {scopeLabel(s)}
               </label>
             ))}
-            <div className="form-actions">
+            <div className="form-actions auth-actions">
               <button
                 className="primary"
                 disabled={busy || view.status !== "pending"}

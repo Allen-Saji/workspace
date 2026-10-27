@@ -57,9 +57,19 @@ a,
 summary {
   touch-action: manipulation;
 }
-:where(button, a, input, textarea, select, summary):focus-visible {
-  outline: 3px solid #7956ee;
-  outline-offset: 3px;
+:where(button, a, input, textarea, select, summary):focus {
+  outline: none;
+}
+:root :where(button, a, summary):focus-visible {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+:root :where(button, summary):focus-visible {
+  background-image: linear-gradient(#6542e812, #6542e812);
+}
+:root :where(input, textarea, select):focus-visible {
+  box-shadow: inset 0 -2px 0 var(--accent);
 }
 h1,
 h2,
@@ -781,6 +791,11 @@ legend {
   padding: 32px;
   gap: 24px;
 }
+.auth-signin {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
 .auth-card h1 {
   font-size: 30px;
   letter-spacing: -0.8px;
@@ -788,16 +803,29 @@ legend {
 .auth-card p {
   color: var(--muted);
 }
-.auth-links {
+.auth-links,
+.auth-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
+  justify-content: center;
 }
 .auth-links a {
   min-height: 44px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  text-decoration: none;
+}
+.form-actions.auth-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+.form-actions.auth-actions > .primary {
+  grid-column: 1 / -1;
 }
 .auth-card section {
   display: grid;

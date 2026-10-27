@@ -45,7 +45,7 @@ function ExampleWorkspace() {
             <Image src="/icon.svg" alt="" width={26} height={26} />
             Workspace
           </div>
-          {["Today", "Learning", "Agents", "Context"].map((label, index) => (
+          {["Today", "Focus", "Journal", "Agents"].map((label, index) => (
             <div
               key={label}
               className={index === 0 ? styles.previewSelected : ""}
@@ -189,11 +189,11 @@ export default function Landing() {
           </article>
           <article>
             <span className={`${styles.featureIcon} ${styles.yellow}`}>
-              <Icon name="context" />
+              <Icon name="agents" />
             </span>
             <div>
-              <h2>Keep the context</h2>
-              <p>Review decisions and reports from your agents.</p>
+              <h2>Follow agent updates</h2>
+              <p>Review reports and daily journals from your agents.</p>
             </div>
           </article>
         </section>

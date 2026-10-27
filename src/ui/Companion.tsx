@@ -371,9 +371,6 @@ export default function Companion({
               Your device prefers reduced motion, so the robot stays still.
             </p>
           ) : null}
-          <p className="muted small">
-            Appearance preferences stay in this browser.
-          </p>
           <footer className="form-actions">
             <button
               className="secondary"
