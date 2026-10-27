@@ -168,3 +168,18 @@
 :global(body:has(dialog[open])) .companion {
   visibility: hidden;
 }
+@media (hover: hover) and (pointer: fine) {
+  .controls {
+    opacity: 0;
+    transition: opacity 160ms ease;
+  }
+  .companion:hover .controls,
+  .companion:focus-within .controls {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .controls {
+    transition: none;
+  }
+}

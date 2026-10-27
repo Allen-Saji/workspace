@@ -122,7 +122,7 @@ export default function AgentJournal() {
   return (
     <section className="panel secondary-panel">
       <div className="panel-heading">
-        <h2>Agent diary</h2>
+        <h2>Agent reporting</h2>
         <button
           className="text-button"
           disabled={busy}
@@ -131,10 +131,13 @@ export default function AgentJournal() {
             void load();
           }}
         >
-          Refresh diary
+          Refresh status
         </button>
       </div>
-      <p>Daily summaries and status updates sent by your agents.</p>
+      <p>
+        Status updates and reporting preferences.{" "}
+        <a href="#journal">Read daily entries in Journal</a>.
+      </p>
       {active === null && !error ? (
         <p>Loading diary...</p>
       ) : active === false ? (
@@ -250,75 +253,6 @@ export default function AgentJournal() {
             (s) => agent === "all" || s.connectionId === agent,
           ) ? (
             <p>No status received for this selection.</p>
-          ) : null}
-          <h3>Daily entries</h3>
-          {journal.diaries
-            .filter((d) => agent === "all" || d.connectionId === agent)
-            .map((d) => (
-              <article
-                className="registration"
-                key={`${d.connectionId}:${d.localDate}`}
-              >
-                <h4>
-                  {d.localDate} / {title(d.connectionId)}
-                </h4>
-                <p className="muted small">
-                  {d.timezone}
-                  {d.report.isTest ? " / Sample entry" : ""}
-                </p>
-                <p>{d.report.summary}</p>
-                {(["results", "blockers", "nextSteps"] as const)
-                  .filter((field) => d.report[field].length > 0)
-                  .map((field) => (
-                    <div key={field}>
-                      <strong>
-                        {field === "nextSteps"
-                          ? "Next steps"
-                          : field === "results"
-                            ? "Results"
-                            : "Blockers"}
-                      </strong>
-                      {d.report[field].length ? (
-                        <ul>
-                          {d.report[field].map((item, i) => (
-                            <li key={i}>{item}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p>None reported.</p>
-                      )}
-                    </div>
-                  ))}
-                {d.report.evidence.length ? (
-                  <ul>
-                    {d.report.evidence.map((e, i) => (
-                      <li key={i}>
-                        <a
-                          href={e.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {e.label}
-                        </a>{" "}
-                        / supplied by agent; not verified
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                <details>
-                  <summary>Entry details</summary>
-                  <p>
-                    Revision {d.revision}. Observed {stamp(d.report.observedAt)}{" "}
-                    / Sent {stamp(d.report.sentAt)} / Received{" "}
-                    {stamp(d.receivedAt)}
-                  </p>
-                </details>
-              </article>
-            ))}
-          {!journal.diaries.some(
-            (d) => agent === "all" || d.connectionId === agent,
-          ) ? (
-            <p>No diary entries for this selection.</p>
           ) : null}
         </>
       ) : null}

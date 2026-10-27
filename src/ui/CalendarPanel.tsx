@@ -146,11 +146,9 @@ function recover(workspaceId?: string): Recovery | null {
 export default function CalendarPanel({
   workspaceId,
   onChanged,
-  onAsk,
 }: {
   workspaceId?: string;
   onChanged: () => Promise<void> | void;
-  onAsk?: (prompt: string) => void;
 }) {
   const [recovery] = useState(() => recover(workspaceId));
   const [status, setStatus] = useState<Status | null>(null);
@@ -278,7 +276,12 @@ export default function CalendarPanel({
           setCalendarId((selected) =>
             list.calendars.some((item: Calendar) => item.id === selected)
               ? selected
-              : (list.calendars.find((item: Calendar) => item.primary)?.id ?? list.calendars.find((item: Calendar) => item.accessRole === "owner")?.id ?? list.calendars[0]?.id ?? ""),
+              : (list.calendars.find((item: Calendar) => item.primary)?.id ??
+                list.calendars.find(
+                  (item: Calendar) => item.accessRole === "owner",
+                )?.id ??
+                list.calendars[0]?.id ??
+                ""),
           );
         } else {
           setCalendars([]);
@@ -518,20 +521,10 @@ export default function CalendarPanel({
     <section className={styles.panel} aria-label="Calendar">
       <header className={styles.header}>
         <div>
-          <h2>Your calendar</h2>
-          <p>
-            Meetings and time for your plans. Times are shown in Asia/Kolkata.
-          </p>
+          <h2>Google Calendar</h2>
+          <p>Times shown in Asia/Kolkata.</p>
         </div>
         <div className={styles.actions}>
-          {onAsk && (
-            <button
-              className="secondary"
-              onClick={() => onAsk("Find a free hour tomorrow")}
-            >
-              Ask assistant
-            </button>
-          )}
           <button
             className="secondary"
             disabled={busy || loading}
@@ -630,7 +623,11 @@ export default function CalendarPanel({
             {eventsLoading ? (
               <p role="status">Loading events...</p>
             ) : !events.length ? (
-              <p className={styles.hint}>{error ? "Events could not be loaded. Refresh after resolving the error." : "No events in this date range."}</p>
+              <p className={styles.hint}>
+                {error
+                  ? "Events could not be loaded. Refresh after resolving the error."
+                  : "No events in this date range."}
+              </p>
             ) : (
               <ul className={styles.agenda}>
                 {events.map((event) => (
@@ -734,7 +731,9 @@ export default function CalendarPanel({
                         onInput={(event) => {
                           const value = event.currentTarget.value;
                           requestId.current = null;
-                          setDraft((current) => current ? { ...current, start: value } : current);
+                          setDraft((current) =>
+                            current ? { ...current, start: value } : current,
+                          );
                         }}
                       />
                     </label>
@@ -747,7 +746,9 @@ export default function CalendarPanel({
                         onInput={(event) => {
                           const value = event.currentTarget.value;
                           requestId.current = null;
-                          setDraft((current) => current ? { ...current, end: value } : current);
+                          setDraft((current) =>
+                            current ? { ...current, end: value } : current,
+                          );
                         }}
                       />
                     </label>

@@ -16,11 +16,17 @@ import CalendarPanel from "./CalendarPanel";
 import FocusPanel from "./FocusPanel";
 import JournalPanel from "./JournalPanel";
 import Brand from "./Brand";
-import RobotSprite from "./RobotSprite";
 import ArcadeProgress from "./ArcadeProgress";
 import { reactionForSave, type PetReaction } from "./companion-state";
 import { Badge, Icon, Modal, readable as s, stamp } from "./primitives";
-type View = "today" | "focus" | "journal" | "calendar" | "learning" | "agents" | "context";
+type View =
+  | "today"
+  | "focus"
+  | "journal"
+  | "calendar"
+  | "learning"
+  | "agents"
+  | "context";
 type Snapshot = {
   workspaceId: string;
   storageMode: "sqlite" | "supabase";
@@ -29,7 +35,15 @@ type Snapshot = {
   lastReported: string | null;
   freshness: string;
 };
-const views: View[] = ["today", "focus", "journal", "calendar", "learning", "agents", "context"];
+const views: View[] = [
+  "today",
+  "focus",
+  "journal",
+  "calendar",
+  "learning",
+  "agents",
+  "context",
+];
 const labels = {
   today: "Today",
   focus: "Focus",
@@ -134,7 +148,10 @@ export default function Workspace() {
     [detail, setDetail] = useState<WorkspaceRecord | StoredReport | null>(null),
     [working, setWorking] = useState(false);
   const [query, setQuery] = useState("");
-  const [assistant, setAssistant] = useState<{contextId?: string; prompt?: string} | null>(null);
+  const [assistant, setAssistant] = useState<{
+    contextId?: string;
+    prompt?: string;
+  } | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [journalRefreshKey, setJournalRefreshKey] = useState(0);
   const changeFocusMode = useCallback((value: boolean) => {
@@ -152,7 +169,7 @@ export default function Workspace() {
         await fetch("/api/workspace", { cache: "no-store" }),
       );
       setSnapshot(data);
-      setJournalRefreshKey(value => value + 1);
+      setJournalRefreshKey((value) => value + 1);
       setError("");
     } catch (e) {
       setSnapshot(null);
@@ -267,7 +284,9 @@ export default function Workspace() {
     }
   }
   return (
-    <div className={`shell ${view === "focus" ? "focus-view" : ""} ${view === "journal" ? "journal-view" : ""} ${view === "focus" && focusMode ? "focus-mode" : ""}`}>
+    <div
+      className={`shell ${view === "focus" ? "focus-view" : ""} ${view === "journal" ? "journal-view" : ""} ${view === "focus" && focusMode ? "focus-mode" : ""}`}
+    >
       <a href="#main" className="skip">
         Skip to content
       </a>
@@ -300,10 +319,11 @@ export default function Workspace() {
                 reaction={petReaction}
               />
             ) : null}
-            {snapshot ? <button className="text-button" onClick={() => setAssistant({})}>Ask assistant</button> : null}
-            <button className="text-button" onClick={() => void refresh()}>
-              Refresh
-            </button>
+            {view !== "calendar" ? (
+              <button className="text-button" onClick={() => void refresh()}>
+                Refresh
+              </button>
+            ) : null}
             {snapshot?.storageMode === "supabase" ? (
               <button
                 className="text-button"
@@ -321,12 +341,26 @@ export default function Workspace() {
             <p className="subtitle">{descriptions[view]}</p>
           </div>
           {snapshot && view === "today" ? (
-            <button
-              className="primary"
-              onClick={() => setEditing({ kind: "task" })}
-            >
-              Add task
-            </button>
+            <div className="action-group">
+              <button
+                className="text-button"
+                onClick={() => setHistoryOpen(true)}
+              >
+                History
+              </button>
+              <button
+                className="secondary"
+                onClick={() => setCommandOpen(true)}
+              >
+                Review a draft
+              </button>
+              <button
+                className="primary"
+                onClick={() => setEditing({ kind: "task" })}
+              >
+                Add task
+              </button>
+            </div>
           ) : null}
         </header>
         {error ? (
@@ -341,53 +375,28 @@ export default function Workspace() {
         <div role="status">
           {notice ? <p className="save-notice">{notice}</p> : null}
         </div>
-        {snapshot ? <FocusPanel key={snapshot.workspaceId} workspaceId={snapshot.workspaceId} tasks={tasks} visible={view === "focus"} immersive={view === "focus" && focusMode} onImmersive={changeFocusMode} /> : null}
-        {view === "journal" && snapshot ? <JournalPanel workspaceId={snapshot.workspaceId} refreshKey={journalRefreshKey} /> : null}
-        {view === "calendar" && snapshot ? <CalendarPanel key={snapshot.workspaceId} workspaceId={snapshot.workspaceId} onChanged={refresh} onAsk={(prompt) => setAssistant({prompt})} /> : null}
-        {view === "today" && snapshot && !records.length && !reports.length ? (
-          <section className="welcome-panel">
-            <div>
-              <h2>Start with one task.</h2>
-              <p>
-                Add something you want to do today. Make this space yours as you
-                go.
-              </p>
-            </div>
-            <button
-              className="primary"
-              onClick={() => setEditing({ kind: "task" })}
-            >
-              Add your first task
-            </button>
-          </section>
+        {snapshot ? (
+          <FocusPanel
+            key={snapshot.workspaceId}
+            workspaceId={snapshot.workspaceId}
+            tasks={tasks}
+            visible={view === "focus"}
+            immersive={view === "focus" && focusMode}
+            onImmersive={changeFocusMode}
+          />
         ) : null}
-        {view === "today" && snapshot ? (
-          <section className="command-strip">
-            <div className="command-copy">
-              <span className="arcade-icon">
-                <Icon name="context" />
-              </span>
-              <div>
-                <h2>What would you like to do?</h2>
-                <p>Ask your assistant, or enter a structured draft.</p>
-              </div>
-            </div>
-            <div className="action-group">
-              <button className="primary" onClick={() => setAssistant({})}>Ask assistant</button>
-              <button
-                className="text-button"
-                onClick={() => setHistoryOpen(true)}
-              >
-                History
-              </button>
-              <button
-                className="secondary"
-                onClick={() => setCommandOpen(true)}
-              >
-                Write a draft
-              </button>
-            </div>
-          </section>
+        {view === "journal" && snapshot ? (
+          <JournalPanel
+            workspaceId={snapshot.workspaceId}
+            refreshKey={journalRefreshKey}
+          />
+        ) : null}
+        {view === "calendar" && snapshot ? (
+          <CalendarPanel
+            key={snapshot.workspaceId}
+            workspaceId={snapshot.workspaceId}
+            onChanged={refresh}
+          />
         ) : null}
         {!snapshot ? (
           <div className="panel loading">
@@ -485,9 +494,6 @@ export default function Workspace() {
                               <small>{s(t.data.dueDate)}</small>
                             ) : null}
                           </button>
-                          <button className="text-button task-assistant" aria-label={`Ask about ${s(t.data.title)}`} onClick={() => setAssistant({contextId:t.id})}>
-                            <Icon name="agents" />
-                          </button>
                         </div>
                       ))}
                     </div>
@@ -500,12 +506,6 @@ export default function Workspace() {
                   <footer className="panel-footer">
                     <button
                       className="text-button"
-                      onClick={() => setEditing({ kind: "task" })}
-                    >
-                      Add task
-                    </button>
-                    <button
-                      className="text-button"
                       onClick={() => setEditing({ kind: "meeting" })}
                     >
                       Add meeting
@@ -513,22 +513,17 @@ export default function Workspace() {
                   </footer>
                 </section>
               ) : null}
-              {view === "today" || view === "agents" ? (
+              {view === "today" && latest ? (
                 <section className="panel agent-panel">
                   <div className="panel-heading">
                     <h2>
                       <Icon name="agents" />
-                      Assistant updates
+                      Agent reports
                     </h2>
                   </div>
-                  <div className="panel-body assistant-copy">
-                    <div className="assistant-robot">
-                      <RobotSprite pose={latest ? "saved" : "idle"} />
-                    </div>
+                  <div className="panel-body">
                     <p>
-                      {latest
-                        ? latest.report.summary
-                        : "No updates shared yet."}
+                      {latest ? latest.report.summary : "No agent reports yet."}
                     </p>
                     {latest ? (
                       <p className="muted small">
@@ -536,11 +531,7 @@ export default function Workspace() {
                         <br />
                         {reportedState(latest.report.occurredAt, now)}
                       </p>
-                    ) : (
-                      <p className="muted small">
-                        Updates appear when the assistant sends a report.
-                      </p>
-                    )}
+                    ) : null}
                   </div>
                   <footer className="panel-footer">
                     {latest ? (
@@ -760,10 +751,18 @@ export default function Workspace() {
                 <section className="panel secondary-panel">
                   <div className="panel-heading">
                     <h2>Report history</h2>
-                    <span className="muted small">
-                      {reports.length}{" "}
-                      {reports.length === 1 ? "report" : "reports"}
-                    </span>
+                    <div className="action-group">
+                      <span className="muted small">
+                        {reports.length}{" "}
+                        {reports.length === 1 ? "report" : "reports"}
+                      </span>
+                      <button
+                        className="secondary"
+                        onClick={() => setImporting(true)}
+                      >
+                        Import report
+                      </button>
+                    </div>
                   </div>
                   {reports.length ? (
                     reports.map((r) => (
@@ -806,7 +805,15 @@ export default function Workspace() {
         </footer>
       </main>
       {assistant && snapshot ? (
-        <AssistantPanel workspaceId={snapshot.workspaceId} records={records} contextId={assistant.contextId} initialPrompt={assistant.prompt} onClose={() => setAssistant(null)} onChanged={refresh} onBusy={setAssistantBusy} />
+        <AssistantPanel
+          workspaceId={snapshot.workspaceId}
+          records={records}
+          contextId={assistant.contextId}
+          initialPrompt={assistant.prompt}
+          onClose={() => setAssistant(null)}
+          onChanged={refresh}
+          onBusy={setAssistantBusy}
+        />
       ) : null}
       {historyOpen ? (
         <CommandHistory

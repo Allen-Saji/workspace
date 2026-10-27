@@ -394,3 +394,29 @@ dialog {
 .focus-view .page-header:before, .journal-view .page-header:before {
   display: none;
 }
+@media (max-width: 420px) {
+  .sidebar nav {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .sidebar nav a {
+    flex-direction: row;
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px 2px;
+    gap: 0;
+    font-size: 12px;
+  }
+  .sidebar nav svg { display: none; }
+  .pet-settings-trigger span { display: none; }
+  .pet-settings-trigger { justify-content: center; min-width: 44px; }
+  .topbar { flex-wrap: wrap; }
+}
+
+/* Keep page actions close to the title and leave room for actual content. */
+.page-header { min-height: 100px; }
+.page-header:before { opacity: 0.3; width: min(340px, 40%); top: -10px; }
+.page-header > .action-group { align-self: center; justify-content: flex-end; }
+@media (max-width: 700px) {
+  .page-header { min-height: 0; }
+  .page-header > .action-group { align-self: stretch; justify-content: flex-start; gap: 8px; }
+}

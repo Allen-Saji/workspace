@@ -37,7 +37,7 @@ function ExampleWorkspace() {
     <figure className={styles.preview} id="preview">
       <figcaption>
         Example workspace{" "}
-        <span>A little structure for whatever comes next.</span>
+        <span>Tasks, meetings, and progress in one place.</span>
       </figcaption>
       <div className={styles.previewFrame}>
         <div className={styles.previewSidebar} aria-hidden="true">
@@ -58,7 +58,7 @@ function ExampleWorkspace() {
         <div className={styles.previewMain}>
           <header>
             <h3>Good morning!</h3>
-            <p>Your plans, with room to grow.</p>
+            <p>Tasks and updates for today.</p>
           </header>
           <div className={styles.previewGrid}>
             <section>
@@ -132,10 +132,7 @@ export default function Landing() {
           <a href="#how-it-works">How it works</a>
         </nav>
         <div className={styles.navActions}>
-          <Link href="/login" className={styles.signIn}>
-            Sign in
-          </Link>
-          <StartLink />
+          <StartLink>Sign in</StartLink>
         </div>
       </header>
       <main id="landing-main">

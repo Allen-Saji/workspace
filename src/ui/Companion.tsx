@@ -150,7 +150,7 @@ export default function Companion({
   const helpId = useId();
   const update = (change: Partial<PetPreferences>) =>
     storePreferences(key, { ...preferences, ...change });
-  const minimized = preferences.visibility === "minimized";
+  const minimized = width < 700 || preferences.visibility === "minimized";
   const bounds = petBounds({ width, height }, minimized);
   const position = dragPosition ?? preferences.position;
   const activeReaction =
@@ -169,14 +169,12 @@ export default function Companion({
             ? "saved"
             : "idle";
   const message = busy
-    ? "Saving..."
+    ? "Working..."
     : activeReaction === "celebrate"
-      ? "Nice work!"
+      ? "Completed"
       : activeReaction === "saved"
         ? "Saved."
-        : waving
-          ? "Hello!"
-          : "";
+        : "";
   useEffect(() => {
     if (!reaction) return;
     const timer = setTimeout(() => setExpiredReaction(reaction.id), 2600);
@@ -249,10 +247,16 @@ export default function Companion({
         className="text-button pet-settings-trigger"
         onClick={() => setSettings(true)}
         aria-haspopup="dialog"
+        aria-label="Companion appearance"
       >
         <Icon name="agents" />
-        Pet
+        <span>Appearance</span>
       </button>
+      {preferences.visibility === "hidden" && onAsk ? (
+        <button className="text-button" onClick={onAsk}>
+          Assistant
+        </button>
+      ) : null}
       {preferences.visibility !== "hidden" ? (
         <aside
           aria-label="Robot companion"
@@ -267,8 +271,12 @@ export default function Companion({
           {minimized ? (
             <button
               className={styles.restore}
-              onClick={() => onAsk ? onAsk() : update({ visibility: "shown" })}
-              aria-label={onAsk ? "Open workspace assistant" : "Restore robot companion"}
+              onClick={() =>
+                onAsk ? onAsk() : update({ visibility: "shown" })
+              }
+              aria-label={
+                onAsk ? "Open workspace assistant" : "Restore robot companion"
+              }
               onKeyDown={moveWithKeys}
             >
               <RobotSprite />
@@ -280,7 +288,7 @@ export default function Companion({
               </div>
               <div className={styles.controls}>
                 <button
-                  aria-label="Move pet"
+                  aria-label="Move companion"
                   aria-describedby={helpId}
                   className={styles.move}
                   onPointerDown={startDrag}
@@ -296,13 +304,13 @@ export default function Companion({
                   <ControlIcon kind="move" />
                 </button>
                 <button
-                  aria-label="Minimize pet"
+                  aria-label="Minimize companion"
                   onClick={() => update({ visibility: "minimized" })}
                 >
                   <ControlIcon kind="minimize" />
                 </button>
                 <button
-                  aria-label="Hide pet"
+                  aria-label="Hide companion"
                   onClick={() => update({ visibility: "hidden" })}
                 >
                   <ControlIcon kind="hide" />
@@ -314,8 +322,13 @@ export default function Companion({
               </span>
               <button
                 className={styles.character}
-                aria-label={onAsk ? "Open workspace assistant" : "Say hello to the robot"}
-                onClick={() => { setWaving(true); onAsk?.(); }}
+                aria-label={
+                  onAsk ? "Open workspace assistant" : "Robot companion"
+                }
+                onClick={() => {
+                  setWaving(true);
+                  onAsk?.();
+                }}
               >
                 <RobotSprite pose={pose} animated={moving} />
                 <span className={styles.pixel} />
@@ -326,15 +339,12 @@ export default function Companion({
         </aside>
       ) : null}
       {settings ? (
-        <Modal title="Your robot companion" onClose={() => setSettings(false)}>
+        <Modal title="Companion appearance" onClose={() => setSettings(false)}>
           <div className={styles.settingsIntro}>
             <div>
               <RobotSprite pose="wave" />
             </div>
-            <p>
-              A little company while you work. It reacts to your actions in
-              Workspace.
-            </p>
+            <p>Click the companion to open your assistant.</p>
           </div>
           <label>
             <input
@@ -362,8 +372,7 @@ export default function Companion({
             </p>
           ) : null}
           <p className="muted small">
-            The robot is a visual companion, not an agent activity indicator.
-            Preferences stay in this browser.
+            Appearance preferences stay in this browser.
           </p>
           <footer className="form-actions">
             <button
