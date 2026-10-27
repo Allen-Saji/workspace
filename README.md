@@ -10,9 +10,9 @@ agent reports into one personal workspace, with a small animated robot companion
 - Focus with a Pomodoro timer, optional task linking, breaks and a distraction-free view.
 - Write a personal daily journal directly or through the mascot, and read journals published by connected agents.
 - Review text-based command proposals before saving, and undo eligible commands.
-- Import reports and review captured context with its source and acceptance state.
-- Manage scoped agent connections and read agent-supplied reports and diary entries
-  when the corresponding hosted features are enabled.
+- Browse named agents and open a profile with their latest work, reports and daily journals.
+- Manage scoped agent connections and import structured reports from connection settings
+  when the corresponding hosted features are enabled. See [Agent profiles](docs/AGENT-PROFILES.md).
 - Move, minimize, hide or pause the robot. Its reactions follow Workspace actions;
   it is not an indicator of remote agent activity.
 

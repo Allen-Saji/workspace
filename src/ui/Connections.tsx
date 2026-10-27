@@ -3,7 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import type { ConnectionView } from "../connections/hosted";
 import { Modal, scopeLabel } from "./primitives";
 import { reportedState, useReportClock } from "./report-clock";
-export default function Connections() {
+export default function Connections({
+  onChanged,
+}: { onChanged?: () => void } = {}) {
   const now = useReportClock();
   const [mode, setMode] = useState("loading"),
     [items, setItems] = useState<ConnectionView[]>([]),
@@ -75,6 +77,7 @@ export default function Connections() {
         setExpires(v.expiresAt);
       }
       await read();
+      onChanged?.();
     } catch (e) {
       setError(
         e instanceof TypeError

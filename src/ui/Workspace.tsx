@@ -5,8 +5,7 @@ import type { Receipt, WorkspaceRecord } from "../domain/contracts";
 import type { StoredReport } from "../storage/port";
 import CommandReview from "./CommandReview";
 import CommandHistory from "./CommandHistory";
-import Connections from "./Connections";
-import AgentJournal from "./AgentJournal";
+import AgentsPanel from "./AgentsPanel";
 import { reportedState, useReportClock } from "./report-clock";
 import Editor, { type EditTarget } from "./Editor";
 import ReportImport from "./ReportImport";
@@ -50,7 +49,7 @@ const descriptions = {
   journal: "Personal entries and daily agent reports.",
   calendar: "Your meetings and available time.",
   learning: "Track what you are learning.",
-  agents: "Reports and connected agents.",
+  agents: "Your connected agents and their work.",
 };
 function subscribeLocation(callback: () => void) {
   window.addEventListener("hashchange", callback);
@@ -307,7 +306,7 @@ export default function Workspace() {
                 reaction={petReaction}
               />
             ) : null}
-            {view !== "calendar" ? (
+            {view !== "calendar" && view !== "agents" ? (
               <button className="text-button" onClick={() => void refresh()}>
                 Refresh
               </button>
@@ -660,47 +659,14 @@ export default function Workspace() {
               </p>
             ) : null}
             {view === "agents" ? (
-              <>
-                <section className="panel secondary-panel">
-                  <div className="panel-heading">
-                    <h2>Report history</h2>
-                    <div className="action-group">
-                      <span className="muted small">
-                        {reports.length}{" "}
-                        {reports.length === 1 ? "report" : "reports"}
-                      </span>
-                      <button
-                        className="secondary"
-                        onClick={() => setImporting(true)}
-                      >
-                        Import report
-                      </button>
-                    </div>
-                  </div>
-                  {reports.length ? (
-                    reports.map((r) => (
-                      <button
-                        className="history-row"
-                        key={`${r.connectionId}:${r.report.eventId}`}
-                        onClick={() => setDetail(r)}
-                      >
-                        <span>
-                          <strong>{r.report.summary}</strong>
-                          <small>
-                            {stamp(r.report.occurredAt)}
-                            {r.report.isTest ? " / Sample report" : ""}
-                          </small>
-                        </span>
-                        <span aria-hidden="true">&gt;</span>
-                      </button>
-                    ))
-                  ) : (
-                    <p>No reports received.</p>
-                  )}
-                </section>
-                <Connections />
-                <AgentJournal />
-              </>
+              <AgentsPanel
+                key={snapshot.workspaceId}
+                reports={reports}
+                refreshKey={journalRefreshKey}
+                onOpenReport={setDetail}
+                onImportReport={() => setImporting(true)}
+                onRefresh={refresh}
+              />
             ) : null}
           </>
         )}
